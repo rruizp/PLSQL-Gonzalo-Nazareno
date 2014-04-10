@@ -8,12 +8,29 @@ is
 	v_totalloc NUMBER:=0;
 	v_totalempresa NUMBER:=0;
 begin
+	comprobar_excepciones;
 	dbms_output.put_line('Listado de Sueldos');
 	for v_loc in c_loc loop
 		v_totalloc:=ProcesarLocalidad(v_loc.loc);
 		v_totalempresa:=v_totalempresa+v_totalloc;
 	end loop;
 	dbms_output.put_line('Total Sueldos de la Empresa: '||v_totalempresa);
+end;
+
+create or replace procedure comprobarexcepciones
+is
+	v_numemp NUMBER;
+	e_tablaempvacia exception;
+begin
+	select count(*) into v_numemp
+	from emp;
+	if v_numemp=0 then
+		raise e_tablaempvacia;
+	end if;
+exception
+	when e_tablaempvacia then
+		dbms_output.put_line('Tabla EMP sin datos');
+		raise;
 end;
 
 create or replace function ProcesarLocalidad(p_loc dept.loc%type)
