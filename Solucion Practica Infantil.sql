@@ -1,6 +1,5 @@
-Ejercicio 1
-
-Haz una función llamada DevolverCodDept que reciba el nombre de un departamento y devuelva su código.
+--Ejercicio 1
+--Haz una función llamada DevolverCodDept que reciba el nombre de un departamento y devuelva su código.
 
 create or replace function DevolverCodDept (p_nombre dept.dname%type)
 return dept.deptno%type
@@ -20,11 +19,11 @@ exception
 		return -2;
 end DevolverCodDept;
 
-Ejercicio 2
-
-Realiza un procedimiento llamado HallarNumEmp que recibiendo un nombre de departamento, muestre en pantalla el número de empleados de dicho departamento. Puedes utilizar la función creada en el ejercicio 1.
-
-Si el departamento no tiene empleados deberá mostrar un mensaje informando de ello. Si el departamento no existe se tratará la excepción correspondiente.
+--Ejercicio 2
+--Realiza un procedimiento llamado HallarNumEmp que recibiendo un nombre de departamento,
+--muestre en pantalla el número de empleados de dicho departamento. Puedes utilizar la función creada en el ejercicio 1.
+--Si el departamento no tiene empleados deberá mostrar un mensaje informando de ello.
+--Si el departamento no existe se tratará la excepción correspondiente.
 
 create or replace procedure HallarNumEmp (p_nombre dept.dname%type)
 is
@@ -36,13 +35,13 @@ begin
 		select count(*) into v_numempleados
 		from emp
 		where deptno=v_codigo;
-		dbms_output.put_line('El departamento '||p_nombre||' tiene '||							v_numempleados||' empleados');
+		dbms_output.put_line('El departamento '||p_nombre||' tiene '||	v_numempleados||' empleados');
 	end if;
 end HallarNumEmp;
 
-Ejercicio 3
-
-Realiza una función llamada CalcularCosteSalarial que reciba un nombre de departamento y devuelva la suma de los salarios y comisiones de los empleados de dicho departamento. Trata las excepciones que consideres necesarias.
+--Ejercicio 3
+--Realiza una función llamada CalcularCosteSalarial que reciba un nombre de departamento y devuelva la suma de los 
+--salarios y comisiones de los empleados de dicho departamento. Trata las excepciones que consideres necesarias.
 
 create or replace function CalcularCosteSalarial (p_nombre dept.dname%type)
 return NUMBER
@@ -60,9 +59,11 @@ begin
 		return v_codigo; -- devuelvo el error de DevolverCodDept
 	end if;
 end CalcularCosteSalarial;
-Ejercicio 4
 
-Realiza un procedimiento MostrarCostesSalariales que muestre los nombres de todos los departamentos y el coste salarial de cada uno de ellos. Puedes usar la función del ejercicio 3.
+
+--Ejercicio 4
+--Realiza un procedimiento MostrarCostesSalariales que muestre los nombres de todos los departamentos y el coste salarial
+--de cada uno de ellos. Puedes usar la función del ejercicio 3.
 
 create or replace procedure MostrarCostesSalariales
 is
@@ -81,9 +82,8 @@ begin
 	end loop;
 end MostrarCostesSalariales;
 
-Ejercicio 5
-
-Realiza un procedimiento MostrarAbreviaturas que muestre las tres primeras letras del nombre de cada empleado.
+--Ejercicio 5
+--Realiza un procedimiento MostrarAbreviaturas que muestre las tres primeras letras del nombre de cada empleado.
 
 create or replace procedure MostrarAbreviaturas
 is
@@ -96,9 +96,9 @@ begin
 	end loop;	
 end MostrarAbreviaturas;
 
-Ejercicio 6
-
-Realiza un procedimiento MostrarMasAntiguos que muestre el nombre del empleado más antiguo de cada departamento junto con el nombre del departamento. Trata las excepciones que consideres necesarias.
+--Ejercicio 6
+--Realiza un procedimiento MostrarMasAntiguos que muestre el nombre del empleado más antiguo de cada departamento
+--junto con el nombre del departamento. Trata las excepciones que consideres necesarias.
 
 create or replace procedure MostrarMasAntiguos
 is
@@ -135,9 +135,9 @@ exception
 end BuscarMasAntiguo;
 
 
-Ejercicio 7
-
-Realiza un procedimiento MostrarJefes que reciba el nombre de un departamento y muestre los nombres de los empleados de ese departamento que son jefes de otros empleados.Trata las excepciones que consideres necesarias.
+--Ejercicio 7
+--Realiza un procedimiento MostrarJefes que reciba el nombre de un departamento y muestre los nombres de los empleados
+--de ese departamento que son jefes de otros empleados.Trata las excepciones que consideres necesarias.
 
 create or replace procedure MostrarJefes (p_nombre dept.dname%type)
 is
@@ -161,9 +161,9 @@ begin
 	end if;
 end MostrarJefes;
 
-Ejercicio 8
-
-Realiza un procedimiento MostrarMejoresVendedores que muestre los nombres de los dos vendedores con más comisiones. Trata las excepciones que consideres necesarias.
+--Ejercicio 8
+--Realiza un procedimiento MostrarMejoresVendedores que muestre los nombres de los dos vendedores con más comisiones.
+--Trata las excepciones que consideres necesarias.
 
 create or replace procedure MostrarMejoresVendedores
 is
@@ -181,14 +181,14 @@ begin
 		dbms_output.put_line(v_vend.ename);
 	end loop;
 	if c_vend%ROWCOUNT<2 then
-		raise_application_error(-20001,'Hay menos de dos vendedores con 									comisión');
+		raise_application_error(-20001,'Hay menos de dos vendedores con comisión');
 	end if;
 	close c_vend;
 end MostrarMejoresVendedores;
 
-Ejercicio 9
-
-Realiza un procedimiento MostrarsodaelpmE que reciba el nombre de un departamento al revés y muestre los nombres de los empleados de ese departamento. Trata las excepciones que consideres necesarias.
+--Ejercicio 9
+--Realiza un procedimiento MostrarsodaelpmE que reciba el nombre de un departamento al revés y muestre los nombres 
+--de los empleados de ese departamento. Trata las excepciones que consideres necesarias.
 
 Create or replace procedure MostrarsodaelpmE (p_nombre dept.dname%type)
 is
@@ -225,9 +225,9 @@ begin
 end  DevolverCadAlReves;
 
 
-Ejercicio 10
-
-Realiza un procedimiento RecortarSueldos que recorte el sueldo un 20% a los empleados cuyo nombre empiece por la letra que recibe como parámetro. Trata las excepciones que consideres necesarias.
+--Ejercicio 10
+--Realiza un procedimiento RecortarSueldos que recorte el sueldo un 20% a los empleados cuyo nombre empiece por la letra
+--que recibe como parámetro. Trata las excepciones que consideres necesarias.
 
 create or replace procedure RecortarSueldos (p_letra VARCHAR2)
 is
@@ -244,9 +244,9 @@ end RecortarSueldos;
 
 
 
-Ejercicio 11
-
-Realiza un procedimiento BorrarBecarios que borre a los dos empleados más nuevos de cada departamento. Trata las excepciones que consideres necesarias.
+--Ejercicio 11
+--Realiza un procedimiento BorrarBecarios que borre a los dos empleados más nuevos de cada departamento.
+--Trata las excepciones que consideres necesarias.
 
 Create or replace procedure BorrarBecarios
 is
