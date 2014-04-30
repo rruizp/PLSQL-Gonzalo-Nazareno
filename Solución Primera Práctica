@@ -213,6 +213,23 @@ begin
 	end loop;
 end ejercicio3a;
 
+create or replace procedure ComprobarTablasVacias
+is
+	v_numprod  number;
+	v_numventas number;
+begin
+	select count(*) into v_numprod
+	from productos;
+	select count(*) into v_numventas
+	from ventas;
+	if v_numprod=0 then
+		raise_application_error(-20001,'No hay productos');
+	end if;
+	if v_numventas=0 then
+		raise_application_error(-20002,'No hay ventas');
+	end if;
+end ComprobarTablasVacias;
+
 create or replace procedure ProcesarProducto(p_cod productos.codproducto%type, 												 p_numunidades number )
 is
 begin
