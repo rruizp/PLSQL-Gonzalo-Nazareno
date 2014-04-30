@@ -15,7 +15,7 @@ begin
 	open c_libros;
 	fetch c_libros into v_libros;
 	while c_libros%FOUND and c_libros%ROWCOUNT<=4 loop
-		ProcesarLibro(v_libros.ref, v_libros.nombre, v_libros.genero, 				   						  v_libros.numprestamos);
+		ProcesarLibro(v_libros.ref, v_libros.nombre, v_libros.genero, v_libros.numprestamos);
 		fetch c_libros into v_libros;
 	end loop;
 	close c_libros;
@@ -23,8 +23,8 @@ end ejercicio1;
 
 create or replace procedure comprobarexcepcionesej1
 is
-	cont_libros 		number;
-	cont_socios 		number;
+	cont_libros 			number;
+	cont_socios 			number;
 	cont_librosprestados 	number;
 begin
 	select count(*) into cont_libros from libros;
@@ -193,8 +193,8 @@ begin
 	dbms_output.put_line('El número de aprobados es: '||cont_apr);
 	dbms_output.put_line('El número de notables es: '||cont_not);
 	dbms_output.put_line('El número de sobresalientes es: '||cont_sob);
-	dbms_output.put_line('El alumno con la nota más alta es '||v_alumnomax||', que tiene 							  un '||v_notamax);
-	dbms_output.put_line('El alumno con la nota más baja es '||v_alumnomin||', que tiene 							  un '||v_notamin);
+	dbms_output.put_line('El alumno con la nota más alta es '||v_alumnomax||', que tiene un '||v_notamax);
+	dbms_output.put_line('El alumno con la nota más baja es '||v_alumnomin||', que tiene un '||v_notamin);
 end MostrarResultados;
 
 __________________________________________________________________________________________
@@ -230,7 +230,7 @@ begin
 	end if;
 end ComprobarTablasVacias;
 
-create or replace procedure ProcesarProducto(p_cod productos.codproducto%type, 												 p_numunidades number )
+create or replace procedure ProcesarProducto(p_cod productos.codproducto%type, p_numunidades number )
 is
 begin
 	ComprobarStockNegativo(p_cod, p_numunidades);
@@ -239,7 +239,7 @@ begin
 	where codproducto=p_cod;
 end ProcesarProducto;
 
-create or replace procedure ComprobarStockNegativo (p_cod productos.codproducto%type, 												 		p_numunidades number )
+create or replace procedure ComprobarStockNegativo (p_cod productos.codproducto%type, p_numunidades number )
 is
 	v_stock_inicial productos.stock%type;
 	e_stock_negativo exception;
