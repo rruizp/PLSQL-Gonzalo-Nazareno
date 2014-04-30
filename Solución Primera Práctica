@@ -8,7 +8,7 @@ is
 	group by p.reflibro, nombre, genero
 	order by numprestamos desc;
 
-	v_libros c_libros%type;
+	v_libros c_libros%rowtype;
 begin
 	comprobarexcepcionesej1;
 	dbms_output.put_line('Informe de los cuatro libros más prestados');	
@@ -274,6 +274,8 @@ is
 	and lineaproducto=p_linea
 	group by nombre
 	order by importetotal desc;
+	
+	v_totallinea number:=0;
 begin
 	dbms_output.put_line('Linea Producto: '||p_linea);
 	for v_prod in c_productos loop
