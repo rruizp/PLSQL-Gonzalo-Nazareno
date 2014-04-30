@@ -84,9 +84,9 @@ begin
 	for v_notas in c_notas loop
 		MostrarAlumno(v_notas.nombre, v_notas.nota);
 		ActualizarContadores(v_notas.nota, cont_sus, cont_apr, cont_nob, cont_sob);
-		ActualizarMaxyMin(v_notas.nombre, v_notas.nota, v_notamax, v_alumnomax, v_notamin, 							  v_alumnomin);
+		ActualizarMaxyMin(v_notas.nombre, v_notas.nota, v_notamax, v_alumnomax, v_notamin, v_alumnomin);
 	end loop;	
-	MostrarResultados(cont_sus, cont_apr, cont_nob, cont_sob, v_notamax, v_alumnomax, 						  v_notamin, v_alumnomin);
+	MostrarResultados(cont_sus, cont_apr, cont_nob, cont_sob, v_notamax, v_alumnomax, v_notamin, v_alumnomin);
 end ejercicio2;
 
 create or replace procedure ComprobarExcepcionesej2(p_asignatura asignaturas.nombre%type)
