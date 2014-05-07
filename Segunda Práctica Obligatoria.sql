@@ -1,3 +1,4 @@
+
 1.- Crea una función DevolverNombreEquipo que reciba un código de equipo y devuelva el nombre del mismo. Si el equipo no existe devuelve la cadena “Error en código”.
 
 create or replace function DevolverNombreEquipo (p_cod equipos.codequipo%type)
