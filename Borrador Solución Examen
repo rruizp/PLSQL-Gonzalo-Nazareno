@@ -1,0 +1,345 @@
+1. Realiza una función llamada DevolverCodigoCofradia que reciba el nombre corto de una cofradía y devuelva su código, considerando las posibles excepciones que veas oportunas. (1 punto)
+
+create or replace function DevolverCodigoCofradia(p_nombre cofradias.nombrecorto%type)
+return cofradias.codigo%type
+is
+	v_cod cofradias.codigo%type;
+begin
+	select codigo into v_cod
+	from cofradias
+	where nombrecorto=p_nombre;ç
+	return v_cod;
+exception
+	when NO_DATA_FOUND then
+		dbms_output.put_line('La cofradía no existe');
+		raise;
+	when TOO_MANY_ROWS then
+		dbms_output.put_line('Existen dos cofradías con ese nombre');
+		raise;
+end DevolverCodigoCofradia;
+/
+
+2. Realiza un procedimiento llamado EncontrarCofradía que reciba una fecha y el nombre corto de una cofradía y nos devuelva la calle en la que se encuentra en ese momento. Las excepciones a contemplar son las siguientes: La cofradía no existe, La cofradía no sale hoy, La cofradía aun no ha salido, La cofradía ya se ha recogido. (2,5 puntos)
+
+create or replace procedure EncontrarCofradía(p_fecha horarios.fechahora%type,
+											                        p_nombre cofradias.nombrecorto%type)
+is
+	v_calle horarios.calle%type;
+	v_horareferencia horarios.fechahora%type;
+begin
+	ComprobarSiExiste(p_nombre);
+	ComprobarSiSaleHoy(p_nombre, p_fecha);
+	ComprobarSiAunNoHaSalido(p_nombre, p_fecha);
+	ComprobarSiSeHaRecogidoYa(p_nombre, p_fecha);
+
+	v_horareferencia:=BuscarUltimoPuntoPaso(p_fecha, p_nombre);
+
+	select calle into v_calle
+	from horarios
+	where fechahora=v_horareferencia
+	and codigo=(select codigo from cofradias where nombrecorto=p_nombre);
+
+	dbms_output.put_line('La cofradía '||p_nombre||'está en la calle '||v_calle||'a las'||
+						 to_char(p_fecha,'HH:MI')||'del día'||to_char(p_fecha,'DD/MM/YY'));
+						 
+end EncontrarCofradía;
+/
+
+create or replace function BuscarUltimoPuntoPaso(p_fecha horarios.fechahora%type,
+											                           p_nombre cofradias.nombrecorto%type)
+return DATE
+is
+	v_horaultimopunto DATE;
+begin
+	select max(fechahora) into v_horaultimopunto
+	from horarios
+	where fechahora<p_fecha
+	and codigo=(select codigo from cofradias where nombrecorto=p_nombre);
+	return v_horaultimopunto;
+end BuscarUltimoPuntoPaso;
+/
+
+create or replace procedure ComprobarSiExiste(p_nombre cofradias.nombrecorto%type)
+is
+	v_codigo 		NUMBER;
+begin
+	select codigo into v_codigo
+	from cofradias 
+	where nombrecorto=p_nombre;
+exception
+	when NO_DATA_FOUND then
+		dbms_output.put_line('Esa cofradía no está registrada');
+		raise;
+end ComprobarSiExiste;
+/
+
+create or replace procedure ComprobarSiSaleHoy(p_fecha horarios.fechahora%type,
+											   p_nombre cofradias.nombrecorto%type)
+is
+	v_fecha DATE;
+begin
+	select distinct fechahora into v_fecha
+	from horarios
+	where codigocofradia=(select codigo from cofradias where nombrecorto=p_nombre)
+	and to_char(fechahora,'DD/MM')=to_char(p_fecha,'DD/MM');
+exception
+	when NO_DATA_FOUND then
+		dbms_output.put_line('Esa cofradía no sale el'||to_char(p_fecha,'DD/MM'));
+		raise;
+end ComprobarSiSaleHoy;
+/
+
+create or replace procedure ComprobarSiAunNoHaSalido(p_fecha horarios.fechahora%type,
+											   		 p_nombre cofradias.nombrecorto%type)
+is
+	v_horasalida 		NUMBER;
+	e_aunnosalio		EXCEPTION;
+begin
+	select min(fechahora) into v_horasalida
+	from horarios
+	where codigocofradia=(select codigo from cofradias where nombrecorto=p_nombre);
+	if v_horasalida>p_fecha then
+		raise e_aunnosalio;
+	end if;
+exception
+	when e_aunnosalio then
+		dbms_output.put_line('Esa cofradía aun no ha salido. Lo hace a las '
+					  ||to_char (v_horasalida,'HH:MI')||' del '||to_char (v_horasalida,'HH:MI'));
+		raise;
+end ComprobarSiAunNoHaSalido;
+/
+
+create or replace procedure ComprobarSiSeHaRecogidoYa(p_fecha horarios.fechahora%type,
+											   		  p_nombre cofradias.nombrecorto%type)
+is
+	v_horarecogida 		NUMBER;
+	e_recogidaya		EXCEPTION;
+begin
+	select max(fechahora) into v_horarecogida
+	from horarios
+	where codigocofradia=(select codigo from cofradias where nombrecorto=p_nombre);
+	if v_horarecogida<p_fecha then
+		raise e_recogidaya;
+	end if;
+exception
+	when e_recogidaya then
+		dbms_output.put_line('Esa cofradía ya se ha recogido. Lo hizo a las '
+					||to_char (v_horarecogida,'HH:MI')||' del '||to_char (v_horasalida,'HH:MI'));
+		raise;
+end ComprobarSiSeHaRecogidoYa;
+/
+
+3. Realiza un procedimiento llamado IdentificarNazareno que recibe el color de la capa y el del antifaz y devuelva al procedimiento que lo llamó el nombre corto de la cofradía y el tipo del paso al que acompaña el nazareno. Se debe tratar la excepción de que no podamos afirmar con seguridad a que cofradía y tipo de paso pertenece el nazareno solo con el color de la capa y del antifaz. (2,5 puntos).
+
+create or replace procedure IdentificarNazareno(p_colorcapa pasos.colorcapa%type,
+												                        p_colorantifaz pasos.colorantifaz%type,
+												                        p_nombre in out cofradias.nombrecorto%type,
+												                        p_tipopaso in out pasos.tipo%type)
+is
+begin
+	select c.nombrecorto, p.tipo into p_nombre, p_tipopaso
+	from cofradias c, pasos p
+	where c.codigo=p.codigocofradia
+	and colorcapa=p_colorcapa and colorantifaz=p_colorantifaz;
+exception
+	when TOO_MANY_ROWS then
+		dbms_output.put_line('Es imposible saber con certeza la cofradía de ese nazareno');
+		raise;
+end IdentificarNazareno;
+/
+
+create or replace procedure pruebaej3(p_capa pasos.colorcapa%type,
+									                    p_antifaz pasos.colorantifaz%type)
+is
+	v_nombre cofradias.nombrecorto%type;
+	v_tipopaso pasos.tipo%type;
+begin
+	IdentificarNazareno(p_capa,p_antifaz,v_nombre,v_tipopaso);
+	dbms_output.put_line('Ese nazareno es del paso de '||v_tipopaso||'de la cofradia '||v_nombre);
+end;
+/
+
+4. Realiza un procedimiento llamado GenerarInformes que recibira dos parámetros: el primero nos indicará el tipo de informe que deseamos generar entre los siguientes. (4 puntos)
+
+create or replace procedure GenerarInformes(p_tipoinforme NUMBER, p_info VARCHAR2)
+is
+	e_tipodesconocido exception;
+begin
+	case
+		when p_tipoinforme=1 then
+			MostrarHorarioCofradía(p_info);	
+		when p_tipoinforme=2 then
+			MostrarHorariosDia(p_info);
+		when p_tipoinforme=3 then
+			MostrarTodosHorarios;
+		when others then
+			raise e_tipodesconocido;
+exception
+	when e_tipodesconocido then
+		raise_application_error(-20001,'Tipo de informe desconocido. Debe ser 1, 2 o 3');
+end GenerarInformes;
+/
+
+Informe Tipo 1: Cuando el primer parámetro tiene el valor 1, el segundo es el nombre corto de una cofradía. Los informes de Tipo1 muestran el recorrido completo de dicha cofradía, con horas y nombre de calles por las que va pasando. Debe contemplarse la excepción de que la cofradía no exista.
+
+El formato sera:
+
+Horario de la Cofradía NombreLargo
+
+Día de Procesión: xxxxxxxxxx
+
+Hora1 – Hora 2               Calle
+Hora2 – Hora 3               Calle
+Hora3 – Hora 4               Calle
+	….
+
+create or replace procedure MostrarHorarioCofradia(p_nombre cofradias.nombrecorto%type)
+is
+begin
+	MostrarCabeceraTipo1(p_nombre);
+	MostrarRecorrido(p_nombre);
+end MostrarHorarioCofradia;
+
+create or replace procedure MostrarCabeceraTipo1(p_nombre cofradias.nombrecorto%type)
+is
+	v_nombrelargo cofradias.nombrereal%type;
+	v_dia cofradias.diaprocesion%type;
+begin
+	select nombrereal, diaprocesion into v_nombrelargo, v_dia
+	from cofradias 
+	where nombrecorto=p_nombre;
+
+	dbms_output.put_line('Horario de la cofradia '||initcap(v_nombrelargo));
+	dbms_output.put_line('Dia de Procesión: '||v_dia);
+exception
+	when NO_DATA_FOUND then
+		dbms_output.put_line('Cofradía inexistente');
+		raise;
+end MostrarCabeceraTipo1;
+/
+
+create or replace procedure MostrarRecorrido(p_nombre cofradias.nombrecorto%type)
+is
+	cursor c_recorrido
+	is
+	select to_char(fechahora,'HH:MI') as hora, calle
+	from horarios 
+	where codigocofradia=(select codigo from cofradias where nombrecorto=p_nombre)
+	order by hora asc;
+
+	v_recorrido c_recorrido%rowtype;
+	v_horainicial varchar2(5);
+	v_horafinal varchar2(5);
+	v_calle	horarios.calle%type;
+begin
+	open c_recorrido;
+	fetch c_recorrido into v_recorrido;
+	while c_recorrido%found loop
+		v_horainicial:=v_recorrido.hora;
+		v_calle:=v_recorrido.calle;
+		fetch c_recorrido into v_recorrido;
+		v_horafinal:=v_recorrido.hora;
+		dbms_output.put_line(v_horainicial||' - '||v_horafinal||chr(9)||v_calle);
+	end loop;
+	close c_recorrido;
+end MostrarRecorrido;
+/
+
+Informe Tipo 2: Cuando el primer parámetro tiene el valor 2, el segundo es un Día de la Semana Santa ('Domingo de Ramos', 'Lunes Santo', etc...). Los informes de Tipo 2 muestran los recorridos de todas las cofradías que realizan ese día su estación de penitencia ordenadas por hora de salida. Se contemplará la excepción de que el día no sea válido.
+
+Diá de Procesión: xxxxxxxxxxxx
+
+Cofradía: NombreLargo
+
+Hora1 – Hora 2               Calle
+Hora2 – Hora 3               Calle
+Hora3 – Hora 4               Calle
+	….
+Cofradía: NombreLargo
+
+Hora1 – Hora 2               Calle
+Hora2 – Hora 3               Calle
+Hora3 – Hora 4               Calle
+	….
+
+create or replace procedure MostrarHorariosDia(p_dia cofradias.diaprocesion%type)
+is
+	cursor c_cofradias
+	is
+	select nombrecorto, nombrelargo, fechahora
+	from cofradias c, horarios h
+	where diaprocesion=p_dia
+	and c.codigo=h.codigocofradia
+	group by nombrecorto
+	having fechahora=(select min(fechahora) 
+				      from horarios h2
+					  where h2.codigo=h.codigo)
+	order by fechahora asc;
+begin
+	dbms_output.put_line('Dia de Procesion: '||p_dia);
+	for v_cofradias in c_cofradias loop
+		dbms_output.put_line('Cofradia: '||v_cofradias.nombrelargo);
+		MostrarRecorrido(v_cofradias.nombrecorto);
+	end loop;
+end MostrarHorariosDia;
+/
+
+Informe Tipo 3: Cuando el primer parámetro tiene valor 3, se ignorará el valor del segundo parámetro y se mostrará el horario de la Semana Santa completa ordenado cronológicamente de Domingo de Ramos a Domingo de Resurrección y dentro de cada día de procesión por la hora de salida de la cofradia.
+
+	SEMANA SANTA DE DOS HERMANAS
+	
+	  DOMINGO DE RAMOS
+
+		     Cofradía: NombreLargo
+
+	Hora1 – Hora 2               Calle
+	Hora2 – Hora 3               Calle
+	Hora3 – Hora 4               Calle
+	….
+	….
+	Cofradía: NombreLargo
+
+	Hora1 – Hora 2               Calle
+	Hora2 – Hora 3               Calle
+	Hora3 – Hora 4               Calle
+	…..
+		       ….
+
+
+               Total Nazarenos DOMINGO DE RAMOS: nnn	
+	
+
+	         LUNES SANTO
+	
+		…..
+	
+	         Total Nazarenos Lunes Santo: nnn	
+	
+	         …............
+
+create or replace procedure MostrarTodosHorarios
+is
+	cursor c_cofradiasordenadas
+	is
+	select distinct codigocofradia
+	from horarios
+	order by fechahora asc;
+
+	v_ultimodiamostrado VARCHAR2:='NINGUNO';
+	v_cofradias c_cofradias%rowtype;
+begin
+	open c_cofradiasordenadas;
+	fetch c_cofradiasordenadas into v_cofradias;
+	while c_cofradiasordenadas%found loop
+		select diaprocesion into v_diaactual
+		from cofradias
+		where codigo=v_cofradias.codigocofradia;
+		if v_diaactual!=v_ultimodiamostrado then
+			MostrarHorariosDia(v_diaactual);
+			v_ultimodiamostrado:=v_diaactual;
+		end if;
+		fetch c_cofradiasordenadas into v_cofradias;
+	end loop;
+	close c_cofradiasordenadas;
+end MostrarTodosHorarios;
+/
