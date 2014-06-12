@@ -8,6 +8,7 @@ return varchar2
 is
     v_mejorpuesto   clasificacionetapas.posicion%type
 begin
+
     ComprobarCorredor(p_dorsal);
     ComprobarTipo(p_tipo);
     ComprobarSiDisputada(p_tipo);
