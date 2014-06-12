@@ -1,0 +1,45 @@
+// 1. Realiza una función llamada DevolverMejorPuesto que reciba un dorsal y un tipo de etapa y devuelva el
+//    mejor puesto en el que dicho corredor terminó una etapa de ese tipo. Debes contemplar las siguientes
+//    excepciones: Corredor inexistente, Tipo de etapa incorrecto, Etapa no disputada y Etapa posterior al
+//    abandono del corredor. (2 puntos).
+	
+create or replace function DevolverMejorPuesto(p_dorsal ciclistas.dorsal%type, p_tipo etapas.tipo%type)
+return varchar2
+is
+    v_mejorpuesto   clasificacionetapas.posicion%type
+begin
+    ComprobarCorredor(p_dorsal);
+    ComprobarTipo(p_tipo);
+    ComprobarSiDisputada(p_tipo);
+    ComprobarAbandonoPrematuro(p_dorsal, p_tipo);
+    select min(posicion) into v_mejorpuesto
+    from clasificacionetapas
+    where dorsal=p_dorsal
+    and numetapa in (   select numetapa
+                        from etapas 
+                        where tipo=p_tipo);
+    return v_mejorpuesto;
+end DevolverMejorPuesto;
+	
+	
+	
+// 2. Realiza una función llamada PasarASegundos que reciba una distancia al ganador en horas, minutos y 
+//    segundos y devuelva dicha distancia en segundos. Realiza también la función opuesta, Pasarahhmmss que
+//    recibe un número de segundos y lo devuelve en formato hh:mm:ss (2 puntos)
+
+// 3. Realiza una función DevolverSumaDistancias que reciba un dorsal y un número de etapa y devuelva la suma
+//    de las distancias a los ganadores de cada etapa en horas, minutos y segundos hasta la etapa recibida
+//    como parámetro. Debes contemplar la excepción de que el corredor haya abandonado en alguna etapa, en cuyo
+//    caso no se realizará el cálculo. (2 puntos)
+
+// 4. Realiza un procedimiento llamado MostrarClasificacionGeneral que reciba un número de  etapa y muestre la
+//    clasificación general al término de dicha etapa con la posición de cada uno de los ciclistas que
+//    permanecen aun en carrera ordenados por distancia total al lider. Puedes usar una tabla auxiliar en la
+//    base de datos si lo deseas. (3 puntos).
+
+//          1. NombreCorredor CodEquipo 
+//          2. NombreCorredor CodEquipo DistanciaTotalalLider
+//          3. NombreCorredor CodEquipo DistanciaTotalalLider
+//          ...
+//
+//    La DistanciaTotalalLider se presentará en formato hh:mm:ss
