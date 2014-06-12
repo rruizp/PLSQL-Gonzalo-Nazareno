@@ -94,10 +94,75 @@ end ComprobarAbandonoPrematuro;
 //    segundos y devuelva dicha distancia en segundos. Realiza también la función opuesta, Pasarahhmmss que
 //    recibe un número de segundos y lo devuelve en formato hh:mm:ss (2 puntos)
 
+create or replace function PasarASegundos(p_distanciaformato clasificacionesetapas.distanciaalganador%type)
+return number
+is
+	v_distenseg number(6);
+begin
+	v_distenseg:=	to_number(substr(p_distanciaformato,1,2))*3600 +
+			to_number(substr(p_distanciaformato,4,2))*60 +
+			to_number(substr(p_distanciaformato,6,2));
+	return v_distenseg;
+end PasarASegundos;
+
+create or replace function PasarAHHMMSS(p_numseg number)
+return clasificacionesetapas.distanciaalganador%type
+is
+	v_numhoras 	number;
+	v_nummin 	number;
+	v_numseg	number;
+	v_hhmmmss	clasificacionesetapas.distanciaalganador%type;
+begin
+	v_numhoras := floor(p_numseg/3600);
+	v_nummin := floor(mod(p_numseg/3600)/60);
+	v_numseg := mod(mod(p_numseg/3600)/60);
+	v_hhmmss:=to_char(v_numhoras)||':'||to_char(v_nummin)||':'||to_char(v_numseg);
+	
+	return v_hhmmss;
+end PasarAHHMMSS;
+
 // 3. Realiza una función DevolverSumaDistancias que reciba un dorsal y un número de etapa y devuelva la suma
 //    de las distancias a los ganadores de cada etapa en horas, minutos y segundos hasta la etapa recibida
 //    como parámetro. Debes contemplar la excepción de que el corredor haya abandonado en alguna etapa, en cuyo
 //    caso no se realizará el cálculo. (2 puntos)
+
+create or replace function DevolverSumaDistanciasConFormato(p_dorsal ciclistas.dorsal%type,
+							    p_etapa  etapas.numetapa%type)
+return clasificacionesetapas.distanciaalganador%type
+is
+	cursor c_distancias
+	select distanciaalganador
+	from clasificacionesetapas
+	where dorsal=p_dorsal 
+	and numetapa<=p_etapa;
+	
+	v_acum_seg number:=0;
+	v_acum_formateado clasificacionesetapas.distanciaalganador%type
+begin
+	ComprobarAbandono(p_dorsal, p_etapa);
+	for v_distancias in c_distancias loop
+		v_acum_seg:=v_acum_seg+PasarASegundos(v_distancias.distanciaalganador);
+	end loop;
+	
+	v_acum_formateado:=PasarAHHMMSS(v_acum_seg);
+	return v_acum_formateado;
+end DevolverSumaDistanciasConFormato;
+
+create or replace procedure ComprobarAbandono(p_dorsal ciclistas.dorsal%type, p_etapa  etapas.numetapa%type)
+is
+	v_abandono number;
+begin
+	select count(*) into v_abandono
+	from clasificacionesetapas
+	where posicion='Abandono'
+	and dorsal=p_dorsal
+	and numetapa<=p_etapa;
+	
+	if v_abandono!=0 then
+		raise_application_error(-20005,	'El ciclista con dorsal ||p_dorsal||
+						' abandonó antes de la etapa '||p_etapa);
+	end if;
+end ComprobarAbandono;
 
 // 4. Realiza un procedimiento llamado MostrarClasificacionGeneral que reciba un número de  etapa y muestre la
 //    clasificación general al término de dicha etapa con la posición de cada uno de los ciclistas que
@@ -110,3 +175,5 @@ end ComprobarAbandonoPrematuro;
 //          ...
 //
 //    La DistanciaTotalalLider se presentará en formato hh:mm:ss
+
+create or replace procedure MostrarClasificacionGeneral
