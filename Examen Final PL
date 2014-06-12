@@ -21,7 +21,74 @@ begin
     return v_mejorpuesto;
 end DevolverMejorPuesto;
 	
-	
+create or replace procedure ComprobarCorredor(p_dorsal ciclistas.dorsal%type)
+is
+	v_dorsal ciclistas.dorsal%type;
+begin
+	select dorsal into v_dorsal
+	from ciclistas
+	where dorsal=p_dorsal;
+exception
+	when NO_DATA_FOUND then
+		raise_application_error(-20001,'Corredor inexistente: '||p_dorsal);	
+end ComprobarCorredor;
+
+create or replace procedure ComprobarTipo(p_tipo etapas.tipo%type)
+is
+	v_existetipo number;
+	e_tipo_inexistente exception;
+begin
+	select count(*) into v_existetipo
+	from etapas
+	where tipo=p_tipo;
+	if v_existetipo=0 then
+		raise e_tipo_inexistente;
+	end if;
+exception
+	when e_tipo_inexistente then
+		raise_application_error(-20002,'Tipo de etapa inexistente: '||p_tipo);
+end ComprobarTipo;
+
+create or replace procedure ComprobarSiDisputada(p_tipo etapas.tipo%type)
+is
+	v_primeraetapatipo etapas.numetapa%type;
+	v_ultimaetapadisputada etapas.numetapa%type;
+	e_tipo_inexistente exception;
+begin
+	select min(numetapa) into v_primeraetapatipo
+	from etapas
+	where tipo=p_tipo;
+	select max(numetapa) into v_ultimaetapadisputada
+	from clasificacionesetapas;
+	if v_primeraetapatipo>v_ultimaetapadisputada then
+		raise e_tipo_nodisputado;
+	end if;
+exception
+	when e_tipo_nodisputado then
+		raise_application_error(-20003,'No se han disputado aun etapas de tipo'||p_tipo);
+end ComprobarSiDisputada;
+
+create or replace procedure ComprobarAbandonoPrematuro(p_dorsal ciclistas.dorsal%type, p_tipo etapas.tipo%type)
+is
+	v_etapaabandono etapas.numetapa%type;
+	v_primeraetapatipo etapas.numetapa%type;
+	e_abandono_prematuro exception;
+begin
+	select min(numetapa) into v_etapaabandono
+	from clasificacionesetapas
+	where dorsal=p_dorsal and posicion='Abandono';
+	select min(numetapa) into v_primeraetapatipo
+	from etapas
+	where tipo=p_tipo;
+	if v_etapaabandono<v_primeraetapatipo then
+		raise e_abandono_prematuro;
+	end if;
+exception
+	when e_abandono_prematuro then
+		raise_application_error(-20004,'El corredor con dorsal '||p_dorsal||
+					       ' abandonó antes de correr etapas de tipo '||p_tipo);
+
+end ComprobarAbandonoPrematuro;
 	
 // 2. Realiza una función llamada PasarASegundos que reciba una distancia al ganador en horas, minutos y 
 //    segundos y devuelva dicha distancia en segundos. Realiza también la función opuesta, Pasarahhmmss que
