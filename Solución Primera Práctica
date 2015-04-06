@@ -1,3 +1,65 @@
+create or replace procedure ejercicio1
+is
+	cursor c_libros
+	is
+	select p.reflibro as ref, nombre, genero, count(*) as numprestamos
+	from prestamos p, libros l
+	where p.reflibro=l.reflibro
+	group by p.reflibro, nombre, genero
+	order by numprestamos desc;
+
+	v_libros c_libros%type;
+begin
+	comprobarexcepcionesej1;
+	dbms_output.put_line('Informe de los cuatro libros más prestados');	
+	open c_libros;
+	fetch c_libros into v_libros;
+	while c_libros%FOUND and c_libros%ROWCOUNT<=4 loop
+		ProcesarLibro(v_libros.ref, v_libros.nombre, v_libros.genero, 				   						  v_libros.numprestamos);
+		fetch c_libros into v_libros;
+	end loop;
+	close c_libros;
+end ejercicio1;
+
+create or replace procedure comprobarexcepcionesej1
+is
+	cont_libros 		number;
+	cont_socios 		number;
+	cont_librosprestados 	number;
+begin
+	select count(*) into cont_libros from libros;
+	if cont_libros=0 then
+		raise_application_error(-20001,'Tabla Libros vacía');
+	end if;
+	select count(*) into cont_socios from socios;
+	if cont_socios=0 then
+		raise_application_error(-20002,'Tabla Socios vacía');
+	end if;
+	select count(distinct reflibro) into cont_librosprestados from prestamos;
+	if cont_librosprestados<4 then
+		raise_application_error(-20003,'No se han prestado 4 libros o más');
+	end if;
+end comprobarexcepcionesej1;
+
+create or replace procedure ProcesarLibro(p_reflibro libros.reflibro%type,
+					  					  p_nombre libros.nombre%type,
+                                          p_genero libros.genero%type,
+                                          p_numprestamos NUMBER )
+is
+	cursor c_prestamos
+	is
+	select dni, fechaprestamo
+	from prestamos
+	where reflibro=p_reflibro;
+begin
+	dbms_output.put_line(p_nombre||chr(9)||p_genero||chr(9)||p_numprestamos);
+	for v_prestamos in c_prestamos loop
+		dbms_output.put_line(chr(9)||v_prestamos.dni||chr(9)||v_prestamos.fechaprestamo);
+	end loop;
+end ProcesarLibro;
+
+_________________________________________________________________________________________
+
 create or replace procedure ejercicio2(p_asignatura asignaturas.nombre%type);
 is
 	cursor c_notas
@@ -22,9 +84,9 @@ begin
 	for v_notas in c_notas loop
 		MostrarAlumno(v_notas.nombre, v_notas.nota);
 		ActualizarContadores(v_notas.nota, cont_sus, cont_apr, cont_nob, cont_sob);
-		ActualizarMaxyMin(v_notas.nombre, v_notas.nota, v_notamax, v_alumnomax, v_notamin, v_alumnomin);
+		ActualizarMaxyMin(v_notas.nombre, v_notas.nota, v_notamax, v_alumnomax, v_notamin, 							  v_alumnomin);
 	end loop;	
-	MostrarResultados(cont_sus, cont_apr, cont_nob, cont_sob, v_notamax, v_alumnomax, v_notamin, v_alumnomin);
+	MostrarResultados(cont_sus, cont_apr, cont_nob, cont_sob, v_notamax, v_alumnomax, 						  v_notamin, v_alumnomin);
 end ejercicio2;
 
 create or replace procedure ComprobarExcepcionesej2(p_asignatura asignaturas.nombre%type)
@@ -131,6 +193,94 @@ begin
 	dbms_output.put_line('El número de aprobados es: '||cont_apr);
 	dbms_output.put_line('El número de notables es: '||cont_not);
 	dbms_output.put_line('El número de sobresalientes es: '||cont_sob);
-	dbms_output.put_line('El alumno con la nota más alta es '||v_alumnomax||', que tiene un '||v_notamax);
-	dbms_output.put_line('El alumno con la nota más baja es '||v_alumnomin||', que tiene un '||v_notamin);
+	dbms_output.put_line('El alumno con la nota más alta es '||v_alumnomax||', que tiene 							  un '||v_notamax);
+	dbms_output.put_line('El alumno con la nota más baja es '||v_alumnomin||', que tiene 							  un '||v_notamin);
 end MostrarResultados;
+
+__________________________________________________________________________________________
+
+create or replace procedure ejercicio3a
+is
+	cursor c_ventas
+	is
+	select codproducto, sum(unidadesvendidas) as numunidades
+	from ventas
+	group by codproducto;
+begin
+	ComprobarTablasVacias;
+	for v_ventas in c_ventas loop
+		ProcesarProducto(v_ventas.codproducto, v_ventas.numunidades);
+	end loop;
+end ejercicio3a;
+
+create or replace procedure ProcesarProducto(p_cod productos.codproducto%type, 												 p_numunidades number )
+is
+begin
+	ComprobarStockNegativo(p_cod, p_numunidades);
+	update productos
+	set stock=stock-p_numunidades
+	where codproducto=p_cod;
+end ProcesarProducto;
+
+create or replace procedure ComprobarStockNegativo (p_cod productos.codproducto%type, 												 		p_numunidades number )
+is
+	v_stock_inicial productos.stock%type;
+	e_stock_negativo exception;
+begin
+	select stock into v_stock_inicial
+	from productos
+	where codproducto=p_cod;
+	if v_stock_inicial < p_numunidades then
+		raise e_stock_negativo;
+	end if;
+exception
+	when e_stock_negativo then
+		dbms_output.put_line('Se ha producido error en las ventas del producto '||p_cod);
+		raise;	
+end ComprobarStockNegativo;
+
+___________________________________________________________________________________________
+
+create or replace procedure ejercicio3b
+is
+	cursor c_lineas
+	is
+	select distinct lineaproducto
+	from productos;
+
+	v_total_linea number;
+	acum_ventas number:=0;
+
+begin
+	dbms_output.put_line('Informe de ventas por línea de productos');
+	dbms_output.put_line('________________________________________');
+	for v_lineas in c_lineas loop
+		v_total_linea:=ProcesarLineaProducto(v_lineas.lineaproducto);
+		acum_ventas:=acum_ventas+v_total_linea;
+	end loop;
+	dbms_output.put_line('Total Ventas: '||acum_ventas);	
+end ejercicio3b;
+
+create or replace function ProcesarLineaProducto(p_linea productos.lineaproducto%type)
+return NUMBER
+is
+	cursor c_productos
+	is
+	select nombre,
+		   sum(unidadesvendidas) as numunidades,
+           preciounitario*sum(unidadesvendidas) as importetotal
+	from productos p, ventas v
+	where p.codproducto=v.codproducto
+	and lineaproducto=p_linea
+	group by nombre
+	order by importetotal desc;
+begin
+	dbms_output.put_line('Linea Producto: '||p_linea);
+	for v_prod in c_productos loop
+		dbms_output.put_line(chr(9)||v_prod.nombre||chr(9)||v_prod.numunidades
+                             ||chr(9)||v_prod.importetotal);
+		v_totallinea:=v_totallinea+v_prod.importetotal;
+	end loop;
+	dbms_output.put_line('Importe Total '||p_linea||': '||v_totallinea);
+	return v_totallinea;
+end ProcesarLineaProducto;
