@@ -274,6 +274,8 @@ is
 	and lineaproducto=p_linea
 	group by nombre
 	order by importetotal desc;
+	
+	v_totallinea NUMBER:=0;
 begin
 	dbms_output.put_line('Linea Producto: '||p_linea);
 	for v_prod in c_productos loop
