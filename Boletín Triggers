@@ -1,0 +1,166 @@
+-- 
+-- Ejercicio 1
+--
+
+create or replace trigger SoloVendedores
+before insert or update on emp
+for each row
+begin
+	if :new.job!= 'SALESMAN' and :new.comm is not null then
+		raise_application_error(-20001,'Solo los vendedores pueden tener comisiones');
+	end if;
+end SoloVendedores;
+
+--
+-- Ejercicio 2
+--
+
+create table audit_emp
+(
+	usuario		varchar2(20),
+	fecha		date,
+	tipo		varchar2(20)
+);
+
+create or replace trigger AuditoriaEmp
+after insert or update or delete on emp
+declare
+	v_operacion VARCHAR2(6);
+begin
+	if inserting then
+		v_operacion:='INSERT'
+	end if;
+	if updating then
+		v_operacion:='UPDATE'
+	end if;
+	if deleting then
+		v_operacion:='DELETE'
+	end if;
+	insert into audit_emp
+	values(user, sysdate, v_operacion);
+end AuditoriaEmp;
+
+--
+-- Ejercicio 3
+--
+
+create or replace trigger ControlRangoSueldos
+before insert or update on emp
+for each row
+begin
+	case :new.job
+		when 'CLERK' then
+			if :new.sal<800 or :new.sal>1100 then
+				raise_application_error(-20001,'Un conserje no puede tener ese sueldo');
+			end if;
+		when 'ANALYST' then
+			if :new.sal<1200 or :new.sal>1600 then
+				raise_application_error(-20002,'Un analista no puede tener ese sueldo');
+			end if;
+		when 'MANAGER' then
+			if :new.sal<1800 or :new.sal>2000 then
+				raise_application_error(-20003,'Un manager no puede tener ese sueldo');
+			end if;
+	end case;
+end ControlRangoSueldos;
+
+	-- Si no tiene empleados a su cargo = si su codigo no aparece en ninguna fila como mgr
+	-- (tendría que consultar emp -> error de tabla mutante)
+
+Versión completa:
+
+create or replace package Ej3 as
+
+TYPE TJefes IS TABLE OF NUMBER
+INDEX BY BINARY_INTEGER;
+
+vTablaJefes TJefes;
+
+end;
+
+-- Usando el codigo de empleado como índice
+
+create or replace trigger AveriguarJefes
+before insert or update on emp
+declare
+	cursor c_jefes is
+	select distinct mgr
+	from emp;
+begin
+	for v_jefes in c_jefes loop
+		Ej3.vTablaJefes(v_jefes.mgr):=1;
+	end loop;
+end AveriguarJefes;
+
+
+create or replace trigger ControlRangoSueldos
+before insert or update on emp
+for each row
+begin
+	if Ej3.vTablaJefes.EXISTS(:new.empno) then
+		dbms_output.put_line(:new.empno||' tiene empleados a su cargo.');
+	else
+		ControlarSueldo(:new.job, :new.sal);
+	end if;
+end;
+
+-- Usando una tabla que contiene los códigos de empleado
+
+create or replace trigger AveriguarJefes2
+before insert or update on emp
+declare
+	cursor c_jefes is
+	select distinct mgr
+	from emp;
+
+	i number:=0;
+begin
+	for v_jefes in c_jefes loop
+		Ej3.vTablaJefes(i):=v_jefes.mgr;
+		i:=i+1;
+	end loop;
+end AveriguarJefes;
+
+create or replace trigger ControlRangoSueldos2
+before insert or update on emp
+for each row
+begin
+	if EsJefe(:new.empno) then
+		dbms_output.put_line(:new.empno||' tiene empleados a su cargo.');
+	else
+		ControlarSueldo(:new.job, :new.sal);
+	end if;
+end;
+
+create or replace function EsJefe(p_empno emp.empno%type)
+return number
+is
+	encontrado number:=0;
+begin
+	for i in Ej3.vTablaJefes.FIRST..Ej3.vTablaJefes.LAST LOOP
+		if Ej3.vTablaJefes(i)=p_empno then
+			encontrado:=1;
+		end if;
+	end loop;
+	return encontrado;
+end;
+
+
+create or replace procedure ControlarSueldo (p_job emp.job%type, p_sal emp.sal%type)
+is
+begin
+	case p_job
+		when 'CLERK' then
+			if p_sal<800 or p_sal>1100 then
+				raise_application_error(-20001,'Un conserje no puede ganar eso');
+			end if;
+		when 'ANALYST' then
+			if p_sal<1200 or p_sal>1600 then
+					raise_application_error(-20001,'Un analista no puede ganar eso');
+			end if;
+		when 'MANAGER' then
+			if p_sal<1800 or p_sal>2000 then
+				raise_application_error(-20001,'Un manager no puede ganar eso');
+			end if;
+	end case;
+end ControlarSueldo;
