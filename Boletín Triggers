@@ -72,13 +72,12 @@ Versión completa:
 create or replace package Ej3 as
 
 TYPE TJefes IS TABLE OF NUMBER
-INDEX BY BINARY_INTEGER;
+INDEX BY binary_integer;
 
 vTablaJefes TJefes;
 
-end;
 
--- Usando el codigo de empleado como índice
+end;
 
 create or replace trigger AveriguarJefes
 before insert or update on emp
@@ -92,7 +91,6 @@ begin
 	end loop;
 end AveriguarJefes;
 
-
 create or replace trigger ControlRangoSueldos
 before insert or update on emp
 for each row
@@ -104,7 +102,7 @@ begin
 	end if;
 end;
 
--- Usando una tabla que contiene los códigos de empleado
+--
 
 create or replace trigger AveriguarJefes2
 before insert or update on emp
@@ -120,6 +118,9 @@ begin
 		i:=i+1;
 	end loop;
 end AveriguarJefes;
+
+
+
 
 create or replace trigger ControlRangoSueldos2
 before insert or update on emp
@@ -145,6 +146,21 @@ begin
 	return encontrado;
 end;
 
+is
+	i number;
+	encontrado number:=0;
+begin
+	
+	i := Ej3.vTablaJefes.FIRST;
+	while encontrado=0 and i < Ej3.vTablaJefes.LAST loop
+		if Ej3.vTablaJefes(i)=p_empno then
+			encontrado:=1;
+		end if;
+		i:= Ej3.vTablaJefes.NEXT;
+	end loop;
+	return encontrado;
+end;
+
 
 create or replace procedure ControlarSueldo (p_job emp.job%type, p_sal emp.sal%type)
 is
@@ -164,3 +180,199 @@ begin
 			end if;
 	end case;
 end ControlarSueldo;
+
+--
+-- Ejercicio 4
+--
+
+create or replace trigger NolotoquesManolo
+before update of sal on emp
+for each row
+declare
+	v_loc dept.loc%type;
+begin
+	select loc into v_loc
+	from dept
+	where deptno=:old.deptno;
+
+	if v_loc = 'DALLAS' and user = 'MANOLO' then
+		raise_application_error(-20002, 'Manolo, estate quieto');
+	end if;
+	
+end NolotoquesManolo;	
+
+--
+-- Ejercicio 5
+--
+
+create or replace trigger PlusDesplazamiento
+after update of deptno on emp
+for each row
+declare
+	v_locantigua dept.loc%type;
+	v_locnueva   dept.loc%type;
+begin
+	-- guardo la localidad de su antiguo departamento
+	select loc into v_locantigua
+	from dept
+	where deptno=:old.deptno;
+	-- guardo la localidad de su nuevo departamento
+	select loc into v_locnueva
+	from dept
+	where deptno=:new.deptno;
+	--si tiene que mudarse le subo el sueldo
+	if v_locantigua!=v_locnueva then 
+		update emp
+		set sal=sal*1,1
+		where empno=:new.empno;
+	end if;
+end PlusDesplazamiento;
+
+create or replace trigger PlusDesplazamiento2
+after update of loc on dept
+for each row
+begin
+	update emp
+	set sal=sal*1,1
+	where deptno=:old.deptno;	
+end PlusDesplazamiento2;	
+
+--
+-- Ejercicio 6
+-- 
+
+create or replace package Ej6 as
+
+TYPE TNumEmp IS TABLE OF NUMBER  --crear tipo de datos
+INDEX BY BINARY_INTEGER;
+
+vTablaNumEmp TNumEmp;            -- declaro variable del tipo recien creado
+
+end;
+
+create or replace trigger RellenarNumEmp
+before update or delete on emp
+declare
+	cursor c_numemp is
+	select deptno, count(*) as n
+	from emp
+	group by deptno;
+begin
+	Ej6.vTablaNumEmp.DELETE;
+	for v_numemp in c_numemp loop
+		Ej6.vTablaNumEmp(v_numemp.deptno):=v_numemp.n;
+	end loop;
+end RellenarNumEmp;
+
+create or replace trigger Deptnovacio
+before update or delete on emp
+for each row
+declare
+
+begin
+	if Ej6.vTablaNumEmp(:old.deptno)=1 then
+		raise_application_error(-20001,'No borres al último empleado');
+	else
+		Ej6.vTablaNumEmp(:old.deptno):=Ej6.vTablaNumEmp(:old.deptno)-1;
+	end if;
+end;
+
+--
+-- Ejercicio 7
+--
+
+create or replace trigger NombreCorrecto
+before insert or update on alumnos
+for each row
+declare
+	v_msg varchar2(50);
+begin
+	for i in 1..length(:new.apenom) loop
+		if (ascii(substr(:new.apenom, i, 1)) between 45 and 59) then
+			v_msg:='No se admite el caracter '||substr(:new.apenom, i, 1) 						||'en el nombre del alumno';
+			raise_application_error(-20001,v_msg);
+		end if;
+	end loop;
+end;
+
+--
+-- Ejercicio 8
+--
+
+create or replace package Ej8
+as
+-- Creamos el tipo de datos registro para guardar dos columnas
+type tRegAlumno is RECORD
+(
+	dni 	alumnos.dni%type,
+	curso 	asignaturas.curso%type
+);
+-- Creamos el tipo de datos tabla de los registros anteriores
+type tTablaAlumnos is table of tRegAlumno
+index by binary_integer;
+-- Declaramos una variable del tipo recién creado
+v_TablaAlumnos tTablaAlumnos;
+
+end Ej8;
+
+create or replace trigger RellenarTabla
+before insert or update on notas
+declare
+	cursor c_alumnosconcurso
+	is
+	select dni, curso
+	from asignaturas a, alumnos al, notas n
+	where n.dni=al.dni and a.cod=n.cod
+	group by dni, curso;
+
+	i number:=0;
+begin
+	for v_cursor in c_alumnosconcurso loop
+		Ej8.v_TablaAlumnos(i).dni=v_cursor.dni;
+		Ej8.v_TablaAlumnos(i).curso=v_cursor.curso;
+		i:=i+1;
+	end loop;
+end RellenarTabla;
+
+create or replace trigger ComprobarCurso
+before insert or update on notas
+for each row
+declare
+	v_cursoasig asignaturas.curso%type;
+	v_cursoalum asignaturas.curso%type;
+begin
+	select curso into v_cursoasig
+	from asignaturas
+	where cod=:new.cod;
+	v_cursoalum:=DevolverCursoAlumno(:new.dni);
+	if v_cursoalum:=0 then
+		InsertarAlumno(:new.dni, v_cursoasig);
+	elsif v_cursoalum!=v_cursoasig then
+		raise_application_error(-20001,'El alumno es de otro curso');
+	end if;
+
+end ComprobarCurso;
+	
+create or replace function DevolverCursoAlumno(p_dni alumnos.dni%type)
+return number
+is
+	v_curso number:=0;
+begin
+	for i in Ej8.v_TablaAlumnos.FIRST..Ej8.v_TablaAlumnos.LAST LOOP
+		if Ej8.v_TablaAlumnos(i).dni = p_dni then
+			v_curso:=Ej8.v_TablaAlumnos(i).curso;
+		end if;
+	end loop;
+	return v_curso;
+end DevolverCursoAlumno;
+
+create or replace procedure InsertarAlumno(p_dni alumnos.dni%type,
+                                           p_curso asignaturas.curso%type)
+is
+	ultimoindice number;
+begin
+	ultimoindice:=Ej8.v_TablaAlumnos.LAST;
+	Ej8.v_TablaAlumnos(ultimoindice+1).dni:=p_dni;
+	Ej8.v_TablaAlumnos(ultimoindice+1).curso:=p_curso;
+end InsertarAlumno;
+
