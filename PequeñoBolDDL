@@ -1,0 +1,38 @@
+create table alumnos
+(
+  dni         varchar2(10),
+  nombre      varchar2(20),
+  direccion   varchar2(20),
+  telefono    varchar2(10),
+  constraint pk_alumnos primary key (dni),
+  constraint dniok check (regexp_like(dni,'[0-9]{8}-[A-Za-z]{1}')),
+  constraint nombreoblig check(nombre is not null),
+  constraint telef95 check(telefono like '95%')
+);
+
+create table empresas
+(
+  cif               varchar2(10),
+  nombre            varchar2(20),
+  direccion         varchar2(20),
+  responsablelegal  varchar2(10),
+  sector            varchar2(15),
+  constraint pk_empresas primary key(cif),
+  constraint nombreunico unique(nombre),
+  constraint direccionoblig check(direccion is not null),
+  constraint sectorok check(sector in ('Informatica','I+D','Electronica')),
+  constraint cifok check(regexp_like(cif,'^[A-Z].*[A-Z]$'))
+);
+
+create table practicas
+(
+  dnialumno   varchar2(10),
+  cifempresa  varchar2(10),
+  fechainicio date,
+  numhoras    number(4) default 0,
+  constraint pk_practicas primary key(dnialumno, cifempresa),
+  constraint fk_alumnos foreign key(dnialumno) references alumnos,
+  constraint fk_empresas foreign key(cifempresa) references empresas,
+  constraint horasmult6 check(mod(numhoras,6)=0),
+  constraint fechaok check (to_char(fechainicio,'MM')='04' or to_char(fechainicio,'MM')='05')
+);
