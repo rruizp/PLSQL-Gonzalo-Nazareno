@@ -33,7 +33,11 @@ begin
         select count(*) into v_numempleados
         from emp
         where deptno=v_codigo;
-        dbms_output.put_line('El departamento '||p_nombre||' tiene '||	v_numempleados||' empleados');
+        if v_numempleados!=0 then
+            dbms_output.put_line('El departamento '||p_nombre||' tiene '||v_numempleados||' empleados');
+        else
+            dbms_output.put_line('El departamento '||p_nombre||'no tiene empleados');
+        end if;
     end if;
 end HallarNumEmp;
 
