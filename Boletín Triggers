@@ -1,6 +1,6 @@
 -- 
 -- Ejercicio 1
---
+-- Haz un trigger que solo permita a los vendedores tener comisiones.
 
 create or replace trigger SoloVendedores
 before insert or update on emp
@@ -13,7 +13,8 @@ end SoloVendedores;
 
 --
 -- Ejercicio 2
---
+-- Registrar todas las operaciones sobre la tabla EMP de SCOTT en una tabla llamada AUDIT_EMP
+-- donde se guarde usuario, fecha y tipo de operación.
 
 create table audit_emp
 (
@@ -42,7 +43,11 @@ end AuditoriaEmp;
 
 --
 -- Ejercicio 3
---
+-- Haz un trigger que controle si los sueldos están en los siguientes rangos:
+-- CLERK: 800 – 1100
+-- ANALYST: 1200 – 1600
+-- MANAGER:1800 – 2000
+
 
 create or replace trigger ControlRangoSueldos
 before insert or update on emp
@@ -183,7 +188,7 @@ end ControlarSueldo;
 
 --
 -- Ejercicio 4
---
+-- Haz un trigger que impida al usuario MANOLO que cambie el sueldo de los empleados que trabajan en DALLAS.
 
 create or replace trigger NolotoquesManolo
 before update of sal on emp
@@ -203,7 +208,7 @@ end NolotoquesManolo;
 
 --
 -- Ejercicio 5
---
+-- Haz un trigger que le suba un 10% el sueldo a los empleados cuando cambia la localidad donde trabajan.
 
 create or replace trigger PlusDesplazamiento
 after update of deptno on emp
@@ -239,7 +244,7 @@ end PlusDesplazamiento2;
 
 --
 -- Ejercicio 6
--- 
+-- Haz un trigger que impida que un departamento se quede sin empleados.
 
 create or replace package Ej6 as
 
@@ -279,7 +284,8 @@ end;
 
 --
 -- Ejercicio 7
---
+-- Diseña un trigger que impida la introducción de registros en la tabla Alumnos si contienen algún carácter numérico 
+-- o algún carácter de puntuación en el campo Apenom.
 
 create or replace trigger NombreCorrecto
 before insert or update on alumnos
@@ -297,7 +303,11 @@ end;
 
 --
 -- Ejercicio 8
---
+-- Diseña los módulos necesarios para que un mismo alumno no pueda tener notas de asignaturas de cursos distintos. 
+-- Es decir, el alumno o es de primero o es de segundo. Si ya tiene notas de uno de los cursos, no puede tener notas del otro.
+-- Si has creado la columna Curso en la tabla Alumnos debes eliminarla. No está permitido su uso para resolver este problema.
+-- Debe funcionar sin dar problema de tablas mutantes en consultas de datos anexados y en consultas de modificación
+-- que afecten a múltiples registros.
 
 create or replace package Ej8
 as
