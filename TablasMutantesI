@@ -1,0 +1,93 @@
+CREATE OR REPLACE PACKAGE ControlSueldos
+AS
+
+SueldoPresi NUMBER;   			-- aquí guardo el sueldo del presidente
+
+ TYPE tRegistroTablaSueldos IS RECORD	 	--defino el tipo de datos registro
+ (
+	DEPTNO 	EMP.DEPTNO%TYPE,
+	SAL_JEFE	EMP.SAL%TYPE
+ );
+
+TYPE tTablaSueldosJefes IS TABLE OF tRegistroTablaSueldos  -- defino el tipo de datos tabla
+INDEX BY BINARY_INTEGER;
+
+SueldosJefes tTablaSueldosJefes;  	-- declaro una variable del tipo tabla antes creado
+
+FUNCTION BuscarSueldoJefe(NumDep EMP.DEPTNO%TYPE) RETURN NUMBER;
+PROCEDURE ActualizarSueldoJefe(NumDep EMP.DEPTNO%TYPE, NuevoSueldo EMP.SAL%TYPE);
+
+END ControlSueldos;
+/
+
+CREATE OR REPLACE PACKAGE BODY ControlSueldos
+AS
+	FUNCTION BuscarSueldoJefe (NumDep EMP.DEPTNO%TYPE) RETURN NUMBER
+	IS
+		I NUMBER :=0;
+	BEGIN
+		FOR I IN ControlSueldos.SueldosJefes.FIRST.. ControlSueldos.SueldosJefes.LAST LOOP
+			IF ControlSueldos.SueldosJefes (I).DEPTNO = NumDep THEN
+		     	      RETURN ControlSueldos.SueldosJefes(I).SAL_JEFE;
+			END IF;
+		END LOOP;
+	END BuscarSueldoJefe;
+	
+  PROCEDURE ActualizarSueldoJefe(NumDep EMP.DEPTNO%TYPE, NuevoSueldo EMP.SAL%TYPE)
+  IS
+	  I NUMBER :=0;
+  BEGIN
+	  FOR I IN ControlSueldos.SueldosJefes.FIRST.. ControlSueldos.SueldosJefes.LAST LOOP
+		  IF ControlSueldos.SueldosJefes (I).DEPTNO = NumDep THEN
+	       	      ControlSueldos.SueldosJefes(I).SAL_JEFE:=NuevoSueldo;
+		  END IF;
+	  END LOOP;
+  END ActualizarSueldoJefe;
+END ControlSueldos;
+
+CREATE OR REPLACE TRIGGER RELLENARVARIABLES
+BEFORE INSERT OR UPDATE ON EMP
+DECLARE
+	CURSOR CUR_SUELDOS_JEFES
+	IS
+	SELECT DEPTNO, SAL
+	FROM EMP
+	WHERE job=‘MANAGER’
+	ORDER BY DEPTNO;
+	INDICE NUMBER:=0;
+
+BEGIN
+	SELECT SAL INTO ControlSueldos.SueldoPresi	-- busco el sueldo del presidente
+	FROM EMP
+	WHERE job=‘PRESIDENT’;	
+
+	-- relleno la tabla de sueldos de los jefes de cada departamento
+	FOR V_CUR IN CUR_SUELDOS_JEFES LOOP
+		ControlSueldos.SueldosJefes(INDICE).DEPTNO := V_CUR.DEPTNO;
+		ControlSueldos.SueldosJefes(INDICE).SAL_JEFE := V_CUR.SAL;
+		INDICE := INDICE + 1;
+	END LOOP;
+END RELLENARVARIABLES;
+/
+
+CREATE OR REPLACE TRIGGER ControlarSueldos
+BEFORE INSERT OR UPDATE ON EMP
+FOR EACH ROW
+DECLARE
+	SueldodelJefe NUMBER;
+BEGIN
+	SueldodelJefe := ControlSueldos.BuscarSueldoJefe (:new.deptno);
+	IF :new.sal > SueldodelJefe THEN
+		RAISE_APPLICATION_ERROR(-20001,’No puede ganar más que su jefe’);
+	END IF;
+	IF :new.sal > ControlSueldos.SueldoPresi THEN
+		RAISE_APPLICATION_ERROR(-20002,’No puede ganar más que el presidente’);
+	END IF;
+	IF :new.job=‘PRESIDENT’ THEN
+		ControlSueldos.SueldoPresi := :new.sal;
+	END IF;
+	IF :new.job = ‘MANAGER’ THEN
+		ControlSueldos.ActualizarSueldoJefe(:new.deptno, :new.sal);
+	END IF;
+END ControlarSueldos;
+
