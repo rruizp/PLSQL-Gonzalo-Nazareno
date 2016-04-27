@@ -1,0 +1,38 @@
+create or replace package Nomasde5
+as
+
+	TYPE tTablaNumEmpleados IS TABLE OF NUMBER
+	INDEX BY BINARY_INTEGER;
+
+	vTablaNumEmp tTablaNumEmpleados;
+end;
+/
+create or replace trigger RellenarTablaNumEmpleados
+before insert or update on emp
+declare
+	cursor c_NumEmpleados
+	is
+	select deptno, count(*) as num
+	from emp
+	group by deptno;
+begin
+	for v_numemp in c_NumEmpleados loop
+		Nomasde5.vTablaNumEmp(v_numemp.deptno):=v_numemp.num;
+	end loop;
+end;
+/
+create or replace trigger Comprobar5
+before insert or update on emp
+for each row
+declare
+begin
+	if Nomasde5.vTablaNumEmp.EXISTS(:new.deptno) then
+		if Nomasde5.vTablaNumEmp(:new.deptno)=5 then
+			raise_application_error(-20001,'No puede haber más de 5 en un dpto.');
+		else
+		   NoMasde5.vTablaNumEmp(:new.deptno):=NoMasde5.vTablaNumEmp(:new.deptno)+1;
+		end if;
+	else
+		NoMasde5.vTablaNumEmp(:new.deptno):=1;
+	end if;
+end;
