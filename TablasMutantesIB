@@ -1,0 +1,55 @@
+CREATE OR REPLACE PACKAGE ControlSueldos
+AS
+
+SueldoPresi NUMBER;   			-- aquí guardo el sueldo del presidente
+
+TYPE tTablaSueldosJefes IS TABLE OF NUMBER  -- defino el tipo de datos tabla
+INDEX BY BINARY_INTEGER;
+
+SueldosJefes tTablaSueldosJefes;  	-- declaro una variable del tipo tabla antes creado
+
+END ControlSueldos;
+/
+
+CREATE OR REPLACE TRIGGER RELLENARVARIABLES
+BEFORE INSERT OR UPDATE ON EMP
+DECLARE
+	CURSOR CUR_SUELDOS_JEFES
+	IS
+	SELECT DEPTNO, SAL
+	FROM EMP
+	WHERE job=‘MANAGER’
+	ORDER BY DEPTNO;
+	
+BEGIN
+	SELECT SAL INTO ControlSueldos.SueldoPresi	-- busco el sueldo del presidente
+	FROM EMP
+	WHERE job=‘PRESIDENT’;	
+
+	-- relleno la tabla de sueldos de los jefes de cada departamento
+	FOR V_CUR IN CUR_SUELDOS_JEFES LOOP
+		ControlSueldos.SueldosJefes(V_CUR.DEPTNO) := V_CUR.SAL;
+	END LOOP;
+END RELLENARVARIABLES;
+/
+
+CREATE OR REPLACE TRIGGER ControlarSueldos
+BEFORE INSERT OR UPDATE ON EMP
+FOR EACH ROW
+DECLARE
+	SueldodelJefe NUMBER;
+BEGIN
+	SueldodelJefe := ControlSueldos.SueldosJefes(:new.deptno);
+	IF :new.sal > SueldodelJefe THEN
+		RAISE_APPLICATION_ERROR(-20001,’No puede ganar más que su jefe’);
+	END IF;
+	IF :new.sal > ControlSueldos.SueldoPresi THEN
+		RAISE_APPLICATION_ERROR(-20002,’No puede ganar más que el presidente’);
+	END IF;
+	IF :new.job=‘PRESIDENT’ THEN
+		ControlSueldos.SueldoPresi := :new.sal;
+	END IF;
+	IF :new.job = ‘MANAGER’ THEN
+		ControlSueldos.SueldosJefes(:new.deptno):= :new.sal;
+	END IF;
+END ControlarSueldos;
