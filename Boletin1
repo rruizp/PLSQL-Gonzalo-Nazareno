@@ -1,0 +1,147 @@
+1. Hacer un procedimiento que muestre el nombre y el salario del empleado cuyo código es 7082
+
+create or replace procedure bol1ej1
+is
+  v_nombre emp.ename%TYPE;
+  v_salario emp.sal%TYPE;
+begin
+  select ename, sal into v_nombre, v_salario
+  from emp
+  where empno='7082';
+  dbms_output.put_line('Nombre: '||v_nombre||' Salario: '||v_salario);
+end bol1ej1;
+
+2. Hacer un procedimiento que reciba como parámetro un código de empleado y devuelva su nombre.
+
+create or replace procedure bol1ej2 (p_codemp emp.empno%type)
+is
+  v_nombre emp.ename%TYPE;
+begin
+  select ename into v_nombre
+  from emp
+  where empno=p_codemp;
+  dbms_output.put_line('Nombre: '||v_nombre);
+end bol1ej2;
+
+3. Crear un procedimiento PL/SQL que cuente el número de filas que hay en la tabla EMP (de Scott),
+deposita el resultado en una variable y visualiza su contenido.
+
+create or replace procedure bol1ej3
+is
+  v_numfilas number;
+begin
+  select count(*) into v_numfilas
+  from emp;
+  dbms_output.put_line('Nº Filas de la tabla EMP:: '||v_numfilas);
+end bol1ej3;
+
+4. Codificar un procedimiento que reciba una cadena y la visualice al revés.
+
+create or replace procedure MostrarAlReves( p_cad VARCHAR2)
+is
+	v_aux VARCHAR2(30):='';
+begin
+	for i in reverse 1..length(p_cad) loop
+		v_aux:=v_aux||substr(p_cad,i,1);
+	end loop;
+	dbms_output.put_line(v_aux);
+end  MostrarAlReves;
+
+o también
+
+create or replace procedure MostrarAlReves( p_cad VARCHAR2)
+is
+	v_aux VARCHAR2(30):='';
+begin
+	for i in 1..length(p_cad) loop
+		v_aux:=v_aux||substr(p_cad,-i,1);
+	end loop;
+	dbms_output.put_line(v_aux);
+end  MostrarAlReves;
+
+8. Codificar un procedimiento que permita borrar un empleado cuyo número se pasará en la llamada.
+
+create or replace procedure BorrarEmpleado (p_codemp emp.empno%TYPE)
+is
+begin
+  delete emp
+  where empno=p_codemp;
+end BorrarEmpleado;
+
+9. Escribir un procedimiento que modifique la localidad de un departamento. El procedimiento
+recibirá como parámetros el número del departamento y la localidad nueva.
+
+create or replace procedure CambiarLoc (p_numdept dept.deptno%TYPE, p_localidad dept.loc%TYPE)
+is
+begin
+  update dept
+  set loc = p_localidad
+  where deptno=p_numdept;
+end CambiarLoc;
+
+11. Realizar un procedimiento que reciba un número y muestre su tabla de multiplicar.
+
+create or replace procedure MostrarTablaMultiplicar (p_num NUMBER)
+is
+begin
+  for i in 1..9 loop
+    dbms_output.put_line (p_num||'X'||i||'='||p_num*i);
+  end loop;
+end MostrarTablaMultiplicar;
+
+13. Procedimiento que recibe una letra e imprima si es vocal o consonante.
+
+create or replace procedure MostrarVocaloConsonante (p_letra CHAR)
+is
+  v_resultado VARCHAR2(10):='Consonante'
+begin
+  if p_letra in ('A','E','I','O','U') then
+    v_resultado := 'Vocal';
+  end if;
+end MostrarVocaloConsonante;
+
+16. Diseñar un procedimiento que recibe por parámetros dos valores numéricos que representan la
+base y el exponente de una potencia donde el exponente es un número entero positivo o negativo. El
+procedimiento visualiza el valor de la potencia, teniendo en cuenta las siguientes consideraciones:
+1) Si la base y el exponente son cero, se mostrará un mensaje de error que diga "Datos erróneos".
+2) Si el exponente es cero la potencia es 1.
+3) Si el exponente es negativo la fórmula matemática de la potencia es pot = 1/base^exp. En este caso,
+si la base es cero escribir un mensaje de "Datos erróneos".
+Nota: No utilizar ninguna función que calcule la potencia.
+
+create or replace function PotenciaPositiva (p_base NUMBER, p_exponente NUMBER)
+return NUMBER
+is
+  v_resultado NUMBER:=1;
+begin
+  for i in 1..p_exponente loop
+    v_resultado:=v_resultado*p_base;
+  end loop;
+  return v_resultado;
+end PotenciaPositiva;
+
+create or replace function PotenciaNegativa (p_base NUMBER, p_exponente NUMBER)
+return NUMBER
+is
+  v_resultado NUMBER:=1;
+begin
+  if p_base=0 then
+    raise_application_error(-20001,'Datos Erróneos');
+  end if;
+  v_resultado:=1/PotenciaPositiva(p_base, p_exponente);
+  return v_resultado;
+end PotenciaNegativa;
+
+create or replace procedure Potencia (p_base NUMBER, p_exponente NUMBER)
+is
+  v_resultado number:=1;
+begin
+  if p_base = 0 and p_exponente = 0 then
+    raise_application_error(-20001,'Datos Erróneos');
+   elsif p_exponente < 0 then
+    v_resultado:= PotenciaNegativa(p_base, p_exponente);
+   elsif p_exponente > 0 then
+    v_resultado:= PotenciaPositiva(p_base, p_exponente);
+  end if;
+  dbms_output.put_line('Resultado= '||v_resultado);
+end Potencia;
