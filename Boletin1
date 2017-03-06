@@ -165,6 +165,16 @@ euros su precio aumentará en un 20 %.
 d) Construya un procedimiento similar al del apartado c donde el usuario introduzca como
 parámetroel código del artículo que desee modificar su precio.
 
+create or replace function ObtenerPrecio (p_codart VARCHAR2)
+return number
+	v_precio NUMBER;
+is
+begin
+	select precio into v_precio
+	from Tabla_Articulos
+	where codigo=p_codart;
+	return v_precio;
+end ObtenerPrecio;
 
 create or replace procedure SubirPorcentaje (p_codart VARCHAR2, porcentaje number)
 is
@@ -184,9 +194,7 @@ create or replace procedure bol1ej19d (p_codart VARCHAR2)
 is
 	v_precioantiguo NUMBER(4);
 begin
-	select precio into v_precioantiguo
-	from Tabla_Articulos
-	where codigo=p_codart;
+	v_precioantiguo:=ObtenerPrecio(p_codart);
 	if v_precioantiguo is not null then
 		if v_precioantiguo < 1 then
 			SubirCantidad(p_codart,0.25);
