@@ -146,3 +146,77 @@ begin
   end if;
   dbms_output.put_line('Resultado= '||v_resultado);
 end Potencia;
+
+19. Cree una tabla Tabla_Articulos con los siguientes atributos: código,
+nombre, precio e IVA. Introduzca datos de prueba utilizando la sentencia INSERT.
+CREATE TABLE Tabla_Articulos (
+codigo VARCHAR(5) PRIMARY KEY,
+nombre VARCHAR(20),
+precio NUMBER,
+IVA NUMBER);
+
+c) Construya un procedimiento que actualice el precio del artículo cuyo código es ‘A005’ según las
+siguientes indicaciones:
+− Si el artículo tiene un precio menor de 1 euro, su precio debe ser aumentado en 25 céntimos.
+− Si está comprendido entre 1 euro y 10 euros su precio aumentará un 10 % .Si excede los 10
+euros su precio aumentará en un 20 %.
+− Si el precio es NULL, el aumento es 0.
+
+d) Construya un procedimiento similar al del apartado c donde el usuario introduzca como
+parámetroel código del artículo que desee modificar su precio.
+
+
+create or replace procedure SubirPorcentaje (p_codart VARCHAR2, porcentaje number)
+is
+	update Tabla_Articulos
+	set precio = precio * (1+porcentaje/100)
+	where codigo=p_codart;
+end SubirPorcentaje;
+
+create or replace procedure SubirCantidad (p_codart VARCHAR2, cantidad number)
+is
+	update Tabla_Articulos
+	set precio = precio + cantidad
+	where codigo=p_codart;
+end SubirCantidad;
+
+create or replace procedure bol1ej19d (p_codart VARCHAR2)
+is
+	v_precioantiguo NUMBER(4);
+begin
+	select precio into v_precioantiguo
+	from Tabla_Articulos
+	where codigo=p_codart;
+	if v_precioantiguo is not null then
+		if v_precioantiguo < 1 then
+			SubirCantidad(p_codart,0.25);
+		elsif v_precioantiguo < 10 then
+			SubirPorcentaje(p_codart,10);
+		else 	
+			SubirPorcentaje(p_codart,20);
+		end if;
+	end if;
+end ModificarPrecio;
+
+20. Crear un procedimiento que en la tabla emp incrementar el salario el 10% a los empleados que
+tengan una comisión superior al 5% del salario.
+
+create or replace procedure IncrementarSalario
+is
+	update emp
+	set sal=sal*1.1
+	where 0,05*sal<nvl(comm,0);
+end IncrementarSalario;
+
+21. Crear un procedimiento que inserte un empleado en la tabla EMP. Su número será superior a los
+existentes y la fecha de incorporación a la empresa será la actual.
+
+create or replace procedure InsertarEmpleado
+is
+	v_empnomax emp.empno%type;
+begin
+	select max(empno) into v_empnomax
+	from emp;
+	insert into emp (empno, ename, hiredate)
+	values (v_empnomax+1, 'PEPE', SYSDATE);
+end InsertarEmpleado;
