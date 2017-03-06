@@ -111,9 +111,9 @@ si la base es cero escribir un mensaje de "Datos erróneos".
 Nota: No utilizar ninguna función que calcule la potencia.
 
 create or replace function PotenciaPositiva (p_base NUMBER, p_exponente NUMBER)
-return NUMBER
+return FLOAT
 is
-  v_resultado NUMBER:=1;
+  v_resultado FLOAT:=1.0;
 begin
   for i in 1..p_exponente loop
     v_resultado:=v_resultado*p_base;
@@ -122,9 +122,9 @@ begin
 end PotenciaPositiva;
 
 create or replace function PotenciaNegativa (p_base NUMBER, p_exponente NUMBER)
-return NUMBER
+return FLOAT
 is
-  v_resultado NUMBER:=1;
+  v_resultado FLOAT:=1.0;
 begin
   if p_base=0 then
     raise_application_error(-20001,'Datos Erróneos');
@@ -135,7 +135,7 @@ end PotenciaNegativa;
 
 create or replace procedure Potencia (p_base NUMBER, p_exponente NUMBER)
 is
-  v_resultado number:=1;
+  v_resultado FLOAT:=1.0;
 begin
   if p_base = 0 and p_exponente = 0 then
     raise_application_error(-20001,'Datos Erróneos');
