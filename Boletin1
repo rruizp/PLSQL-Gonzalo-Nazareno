@@ -93,11 +93,12 @@ end MostrarTablaMultiplicar;
 
 create or replace procedure MostrarVocaloConsonante (p_letra CHAR)
 is
-  v_resultado VARCHAR2(10):='Consonante'
+  v_resultado VARCHAR2(10):='Consonante';
 begin
   if p_letra in ('A','E','I','O','U') then
     v_resultado := 'Vocal';
   end if;
+  dbms_output.put_line(p_letra||' es una '||v_resultado);
 end MostrarVocaloConsonante;
 
 16. Diseñar un procedimiento que recibe por parámetros dos valores numéricos que representan la
