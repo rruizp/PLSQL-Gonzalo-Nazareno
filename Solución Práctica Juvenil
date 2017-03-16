@@ -42,7 +42,7 @@ begin
 end comprobarexcepcionesej1;
 
 create or replace procedure ProcesarLibro(p_reflibro libros.reflibro%type,
-					  					  p_nombre libros.nombre%type,
+					  p_nombre libros.nombre%type,
                                           p_genero libros.genero%type,
                                           p_numprestamos NUMBER )
 is
@@ -193,8 +193,8 @@ begin
 	dbms_output.put_line('El número de aprobados es: '||cont_apr);
 	dbms_output.put_line('El número de notables es: '||cont_not);
 	dbms_output.put_line('El número de sobresalientes es: '||cont_sob);
-	dbms_output.put_line('El alumno con la nota más alta es '||v_alumnomax||', que tiene 							  un '||v_notamax);
-	dbms_output.put_line('El alumno con la nota más baja es '||v_alumnomin||', que tiene 							  un '||v_notamin);
+	dbms_output.put_line('El alumno con la nota más alta es '||v_alumnomax||', que tiene un '||v_notamax);
+	dbms_output.put_line('El alumno con la nota más baja es '||v_alumnomin||', que tiene un '||v_notamin);
 end MostrarResultados;
 
 __________________________________________________________________________________________
