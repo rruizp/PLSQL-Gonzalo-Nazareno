@@ -84,9 +84,9 @@ begin
 	for v_notas in c_notas loop
 		MostrarAlumno(v_notas.nombre, v_notas.nota);
 		ActualizarContadores(v_notas.nota, cont_sus, cont_apr, cont_nob, cont_sob);
-		ActualizarMaxyMin(v_notas.nombre, v_notas.nota, v_notamax, v_alumnomax, v_notamin, 							  v_alumnomin);
+		ActualizarMaxyMin(v_notas.nombre, v_notas.nota, v_notamax, v_alumnomax, v_notamin, v_alumnomin);
 	end loop;	
-	MostrarResultados(cont_sus, cont_apr, cont_nob, cont_sob, v_notamax, v_alumnomax, 						  v_notamin, v_alumnomin);
+	MostrarResultados(cont_sus, cont_apr, cont_nob, cont_sob, v_notamax, v_alumnomax, v_notamin, v_alumnomin);
 end ejercicio2;
 
 create or replace procedure ComprobarExcepcionesej2(p_asignatura asignaturas.nombre%type)
@@ -143,10 +143,10 @@ begin
 end MostrarAlumno;
 
 create or replace procedure ActualizarContadores(p_nota notas.nota%type,
-												 cont_sus in out number,
-												 cont_apr in out number,
-												 cont_nob in out number,
-												 cont_sob in out number)
+						 cont_sus in out number,
+						 cont_apr in out number,
+						 cont_nob in out number,
+						 cont_sob in out number)
 is
 begin
 	case
@@ -162,11 +162,11 @@ begin
 end ActualizarContadores;
 
 create or replace procedure ActualizarMaxyMin(p_nombre alumnos.nombre%type,
-											  p_nota notas.nota%type,
-											  v_notamax in out notas.nota%type,
-											  v_alumnomax in out alumnos.nombre%type,
-											  v_notamin in out notas.nota%type,
-				 							  v_alumnomin in out alumnos.nombre%type)
+					      p_nota notas.nota%type,
+					      v_notamax in out notas.nota%type,
+					      v_alumnomax in out alumnos.nombre%type,
+					      v_notamin in out notas.nota%type,
+				 	      v_alumnomin in out alumnos.nombre%type)
 is
 begin
 	if p_nota>v_notamax then
@@ -180,13 +180,13 @@ begin
 end ActualizarMaxyMin;
 
 create or replace procedure MostrarResultados(cont_sus NUMBER,
-											  cont_apr NUMBER,
-											  cont_nob NUMBER,
-											  cont_sob NUMBER,
-											  v_notamax notas.nota%type,
-											  v_alumnomax alumnos.nombre%type,
-					 						  v_notamin notas.nota%type,
-											  v_alumnomin alumnos.nombre%type)
+					      cont_apr NUMBER,
+					      cont_nob NUMBER,
+					      cont_sob NUMBER,
+					      v_notamax notas.nota%type,
+					      v_alumnomax alumnos.nombre%type,
+					      v_notamin notas.nota%type,
+					      v_alumnomin alumnos.nombre%type)
 is
 begin
 	dbms_output.put_line('El número de suspensos es: '||cont_sus);
