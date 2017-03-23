@@ -218,7 +218,7 @@ create or replace procedure IncrementarSalario
 is
 	update emp
 	set sal=sal*1.1
-	where 0,05*sal<nvl(comm,0);
+	where 0.05*sal<nvl(comm,0);
 end IncrementarSalario;
 
 21. Crear un procedimiento que inserte un empleado en la tabla EMP. Su número será superior a los
