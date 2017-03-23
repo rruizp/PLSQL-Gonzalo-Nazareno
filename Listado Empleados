@@ -1,0 +1,84 @@
+Mostrar un listado del esquema de SCOTT con el siguiente aspecto:
+
+Departamento: NombreDepartamento1
+
+	NombreEmpleado1....SalEmpleado1
+	...
+	NombreEmpleadoN....SalEmpleadoN
+
+Total Salarios Dpto NombreDepartamento1: nnnnnnnnn
+
+Departamento: NombreDepartamento2
+
+	NombreEmpleado1....SalEmpleado1
+	...
+	NombreEmpleadoN....SalEmpleadoN
+
+Total Salarios Dpto NombreDepartamento2: nnnnnnnnn
+...
+...
+...
+Total de Salarios en la Empresa: nnnnnnnnnnnnnnnn
+
+create or replace procedure principal
+is
+	cursor c_dept 
+	is
+	select deptno, dname
+	from dept
+	order by dname desc;
+
+	v_totalsaldpto number:=0;
+	v_totalempresa number:=0;
+begin
+	MostrarCabeceraInforme;
+	for v_dept in c_dept loop
+		MostrarNombreDept(v_dept.dname);
+		v_totalsaldpto:=MostrarEmpleados(v_dept.deptno);
+		v_totalempresa:=v_totalempresa+v_totalsaldpto;
+		MostrarTotalDept(v_dept.dname, v_totalsaldpto);
+	end loop;
+	MostrarTotalEmpresa(v_totalempresa);
+end principal;
+
+create or replace procedure MostrarCabeceraInforme
+is
+begin 
+	dbms_output.put_line('Informe de Empleados');
+	dbms_output.put_line('____________________');
+end MostrarCabeceraInforme;
+
+create or replace procedure MostrarNombreDept(p_nombredept dept.dname%type)
+is
+begin 
+	dbms_output.put_line('Departamento: '||p_nombredept);
+end MostrarNombreDept;
+
+create or replace function MostrarEmpleados(p_coddept dept.deptno%type)
+return NUMBER
+is
+	cursor c_emp
+	is
+	select ename, sal
+	from emp
+	where deptno=p_coddept;
+	v_acumdept number:=0;
+begin
+	for v_emp in c_emp loop
+		dbms_output.put_line(chr(9)||rpad(v_emp.ename,10,'.')||v_emp.sal);
+		v_acumdept:=v_acumdept+v_emp.sal;
+	end loop;
+	return v_acumdept;
+end MostrarEmpleados;
+
+create or replace procedure MostrarTotalDept(p_nomdept dept.dname%type, p_total number)
+is
+begin
+	dbms_output.put_line( 'Total Salarios Dpto. '||p_nomdept||': '||p_total);
+end MostrarTotalDept;
+
+create or replace procedure MostrarTotalEmpresa(p_total number)
+is
+begin
+	dbms_output.put_line( 'Total Salarios Empresa: '||p_total);
+end MostrarTotalEmpresa;
