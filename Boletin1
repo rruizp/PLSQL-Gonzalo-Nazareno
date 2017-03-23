@@ -77,6 +77,11 @@ begin
   update dept
   set loc = p_localidad
   where deptno=p_numdept;
+  if SQL%ROWCOUNT=1 then
+  	dbms_output.put_line('Registro modificado');
+  else
+  	dbms_output.put_line('Departamento no encontrado');
+  end if;
 end CambiarLoc;
 
 11. Realizar un procedimiento que reciba un número y muestre su tabla de multiplicar.
