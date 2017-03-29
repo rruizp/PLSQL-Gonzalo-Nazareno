@@ -170,6 +170,7 @@ begin
     fetch c_vend into v_vend;
     while c_vend%FOUND and c_vend%ROWCOUNT<=3 loop
         dbms_output.put_line(v_vend.ename);
+        fetch c_vend into v_vend;
     end loop;
     if c_vend%ROWCOUNT<2 then
         raise_application_error(-20001,'Hay menos de dos vendedores con comisión');
