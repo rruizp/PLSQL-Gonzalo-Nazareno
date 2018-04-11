@@ -91,6 +91,7 @@ end ejercicio2;
 
 create or replace procedure ComprobarExcepcionesej2(p_asignatura asignaturas.nombre%type)
 is
+begin
 	ComprobarExistenciaTablas;
 	ComprobarExistenciaAsignatura(p_asignatura);
 end ComprobarExcepcionesej2;
