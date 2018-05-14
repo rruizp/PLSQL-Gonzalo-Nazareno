@@ -386,3 +386,82 @@ begin
 	Ej8.v_TablaAlumnos(ultimoindice+1).curso:=p_curso;
 end InsertarAlumno;
 
+Versión 2018:
+
+create or replace package MismoCurso
+as
+	TYPE tRegistro IS RECORD
+	(
+		DNI	alumnos.dni%type,
+		Curso	asignaturas.curso%type
+	);
+
+	TYPE tTablaRegistros IS TABLE OF tRegistro INDEX BY BINARY_INTEGER;
+
+	v_MiTabla tTablaRegistros;
+end;
+
+create or replace trigger PorSentencia
+before insert or update on notas
+declare
+	cursor c_cursos
+	is
+	select distinct dni, curso
+	from asignaturas a, notas n
+	where a.codigo = n.codigoasig;
+	
+	i NUMBER:=0; -- indice de la tabla
+begin
+	MismoCurso.v_MiTabla.DELETE;
+	
+	for v_cursos in c_cursos loop
+		MismoCurso.v_MiTabla(i).DNI:=v_cursos.dni;
+		MismoCurso.v_MiTabla(i).curso:=v_cursos.curso;
+		i:=i+1;
+	end loop;
+end;
+
+create or replace trigger PorFila
+before insert or update on notas
+for each row
+declare
+	v_cursoasig 	asignaturas.curso%type;
+	v_cursoalumno	asignaturas.curso%type;
+begin
+	select curso into v_cursoasig
+	from asignaturas
+	where codigo=:new.codasig;
+	
+	v_cursoalumno:=ObtenerCursoAlumno(:new.dni);
+	if v_cursoalumno=-1 then
+		IntroducirAlumnoNuevo(:new.dnialumno, v_cursoasig);
+	elsif v_cursoasig!=v_cursoalumno then
+		raise_application_error(-20001, 'Ya tiene notas de '||v_cursoalumno||' y la 																		 asignatura es de '||v_cursoasig);
+	end if;
+end;
+
+create or replace function ObtenerCursoAlumno(p_dni alumnos.dni%type)
+return NUMBER
+is
+	v_curso asignaturas.curso%type:=-1;
+	i NUMBER;
+	v_encontrado NUMBER:= 0;
+begin	
+	i:=MismoCurso.v_miTabla.FIRST;
+	while MismoCurso.v_MiTabla.EXISTS(i) AND v_encontrado=0 loop
+		if MismoCurso.v_MiTabla(i).dni=p_dni then
+			v_curso:=MismoCurso.v_MiTabla(i).curso;
+			v_encontrado:=1;
+		end if;
+		i:=MismoCurso.v_MiTabla.NEXT;
+	end loop;
+	return v_curso;
+end;
+
+create or replace procedure IntroducirAlumnoNuevo(p_dni alumnos.dni%type,
+																									p_curso NUMBER)
+is
+begin
+		MismoCurso.v_MiTabla(MismoCurso.v_MiTabla.LAST+1).dni:=p_dni;
+		MismoCurso.v_MiTabla(MismoCurso.v_MiTabla.LAST).curso:=p_curso;
+end;
