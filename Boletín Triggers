@@ -465,3 +465,227 @@ begin
 		MismoCurso.v_MiTabla(MismoCurso.v_MiTabla.LAST+1).dni:=p_dni;
 		MismoCurso.v_MiTabla(MismoCurso.v_MiTabla.LAST).curso:=p_curso;
 end;
+
+--
+-- Ejercicio 9
+--
+
+-- Diseña un trigger que cada vez que se produzca un cambio en la tabla notas,
+-- actualice una columna llamada nota media en la tabla alumnos pero solo en las
+-- filas de dicha tabla en las que la actualización sea necesaria.
+
+-- Pasos previos:
+
+	-- Añadimos columna NotaMedia a la tabla Alumnos
+
+	ALTER TABLE alumnos
+	ADD NotaMedia NUMBER(3,1);
+
+	-- Rellenamos dicha columna:
+
+	update alumnos a
+	set notamedia = (select sum(notas)/count(*)
+			 from notas
+			 where dnialumno = a.dni)
+	where a.dni in (select dnialumno from notas);
+
+	-- Con un procedimiento:
+		
+	create or replace procedure ActualizarNotaMedia
+	is
+		cursor c_notas
+		is
+		select dni, sum(nota)/count(*) as notamedia
+		from notas
+		group by dni;
+	begin
+		for v_notas in c_notas loop
+			update alumnos
+			set notamedia=v_notas.notamedia
+			where dni=v_notas.dni;
+		end loop;
+	end;
+
+create or replace package NotaMedia
+as
+	TYPE tRegistro IS RECORD
+	(
+		DNI		alumnos.dni%type,
+		NumNotas	NUMBER,
+		TotalPuntos	NUMBER
+	);
+
+	TYPE tTabla IS TABLE OF tRegistro INDEX BY BINARY_INTEGER;
+
+	v_Tabla tTabla;
+end;
+
+create or replace trigger PorSentencia
+before insert or update or delete on notas
+declare
+	cursor c_alumnos
+	is
+	select dni, count(*) as numnotas, sum(nota) as total
+	from notas
+	group by dni;
+
+	i number:=0;
+begin
+	for v_alumnos in c_alumnos loop
+		NotaMedia.v_Tabla(i).DNI:=v_alumnos.dni;
+		NotaMedia.v_Tabla(i).NumNotas:=v_alumnos.numnotas;
+		NotaMedia.v_Tabla(i).TotalPuntos:=v_alumnos.total;
+		i:=i+1;
+	end loop;
+end;
+
+create or replace trigger NotaMediaInsert
+before insert on notas
+for each row
+begin
+	TratarNotaAñadida(:new.dni,:new.nota);
+end;
+
+create or replace procedure ObtenerInfoAlumno (	p_dni 		alumnos.dni%type,
+						p_total		out number,
+						p_numnotas	out number)
+is
+	v_encontrado NUMBER:=0;
+begin
+	for i in NotaMedia.v_Tabla.FIRST..NotaMedia.v_Tabla.LAST loop
+		if NotaMedia.v_Tabla(i).DNI=p_dni then
+			p_total:=NotaMedia.v_Tabla(i).totalpuntos;
+			p_numnotas:=NotaMedia.v_Tabla(i).numnotas;
+			v_encontrado:=1;
+		end if;
+	end loop;
+	if v_encontrado = 0 then
+		p_total:=0;	
+		p_numnotas:=0;
+	end if;
+end;
+
+create or replace procedure InsertarAlumnoenTablaPL	(p_dni  alumnos.dni%type,
+							 p_nota NUMBER)
+is
+begin
+	NotaMedia.v_Tabla(LAST+1).DNI:=p_dni;
+	NotaMedia.v_Tabla(LAST).NumNotas:=1;
+	NotaMedia.v_Tabla(LAST).TotalPuntos:=p_nota;
+end;
+	
+create or replace procedure AñadirNotaAlumnoenTablaPL	(p_dni  alumnos.dni%type, p_nota NUMBER)
+is
+begin
+	for i in NotaMedia.v_Tabla.FIRST..NotaMedia.v_Tabla.LAST loop
+		if NotaMedia.v_Tabla(i).DNI=p_dni then
+			NotaMedia.v_Tabla(i).totalpuntos:=NotaMedia.v_Tabla(i).totalpuntos+p_nota;
+			NotaMedia.v_Tabla(i).numnotas:=NotaMedia.v_Tabla(i).numnotas+1;
+		end if;
+	end loop;
+end;
+
+create or replace trigger NotaMediaDelete
+before delete on notas
+for each row
+begin
+	TratarNotaEliminada(:old.dni, :old.nota);
+end;
+
+create or replace procedure EliminarAlumnoenTablaPL (p_dni alumnos.dni%type)
+is
+begin
+	for i in NotaMedia.v_Tabla.FIRST..NotaMedia.v_Tabla.LAST loop
+		if NotaMedia.v_Tabla(i).DNI=p_dni then
+			NotaMedia.v_tabla.DELETE(i);
+		end if;
+	end loop;
+end;
+
+
+create or replace procedure QuitarNotaAlumnoenTablaPL	(p_dni  alumnos.dni%type, p_nota NUMBER)
+is
+begin
+	for i in NotaMedia.v_Tabla.FIRST..NotaMedia.v_Tabla.LAST loop
+		if NotaMedia.v_Tabla(i).DNI=p_dni then
+			NotaMedia.v_Tabla(i).totalpuntos:=NotaMedia.v_Tabla(i).totalpuntos-p_nota;
+			NotaMedia.v_Tabla(i).numnotas:=NotaMedia.v_Tabla(i).numnotas-1;
+		end if;
+	end loop;
+end;
+
+create or replace trigger NotaMediaUpdateNota
+before update of nota on notas
+for each row
+declare
+	v_totalpuntos NUMBER;
+	v_numnotas		NUMBER;
+begin
+	ObtenerInfoAlumno(:old.dni, v_totalpuntos, v_numnotas);
+
+	update alumnos
+	set notamedia = (v_totalpuntos+:new.nota-:old.nota)/v_numnotas
+	where dni=:old.dni;
+
+	ActualizarTotalPuntosTablaPL(:old.dni, :new.nota-:old.nota);
+end;
+
+create or replace procedure ActualizarTotalPuntosTablaPL (p_dni   alumnos.dni%type, p_difer NUMBER)
+is
+begin
+	for i in NotaMedia.v_Tabla.FIRST..NotaMedia.v_Tabla.LAST loop
+		if NotaMedia.v_Tabla(i).DNI=p_dni then
+			NotaMedia.v_Tabla(i).totalpuntos:=NotaMedia.v_Tabla(i).totalpuntos+p_difer;
+		end if;
+	end loop;
+end;
+
+create or replace trigger NotaMediaUpdateDNI
+before update of dni on notas
+for each row
+begin
+	TratarNotaEliminada(:old.dni,:old.nota);
+	TratarNotaAñadida(:new.dni,:new.nota);
+end;
+
+create or replace procedure TratarNotaEliminada (p_dni alumnos.dni%type, p_nota notas.nota%type)
+is
+	v_totalpuntos NUMBER;
+	v_numnotas NUMBER;
+begin
+	ObtenerInfoAlumno(p_dni, v_totalpuntos, v_numnotas);
+	
+	if v_numnotas = 1 then
+		update alumnos
+		set notamedia = NULL
+		where dni = p_dni;
+	else
+		update alumnos
+		set notamedia= (v_totalpuntos - p_nota)/ (v_numnotas - 1)
+		where dni = p_dni;
+	end if;
+--Paso 5
+	if v_numnotas=1 then	-- el alumno no estaba en la tabla persistente
+		EliminarAlumnoenTablaPL(p_dni);
+	else
+		QuitarNotaAlumnoenTablaPL(p_dni, p_nota);	
+	end if;
+end;
+
+create or replace procedure TratarNotaAñadida ( p_dni alumnos.dni%type,	p_nota notas.nota%type)
+is
+	v_totalpuntos NUMBER;
+	v_numnotas NUMBER;
+begin
+	ObtenerInfoAlumno(p_dni, v_totalpuntos, v_numnotas);
+
+	update alumnos
+	set notamedia= (v_totalpuntos + p_nota)/ (v_numnotas + 1)
+	where dni = p_dni;
+--Paso 5
+	if v_numnotas=0 then	-- el alumno no estaba en la tabla persistente
+		InsertarAlumnoenTablaPL(p_dni, p_nota);
+	else
+		AñadirNotaAlumnoenTablaPL(p_dni, p_nota);	
+	end if;
+end;
