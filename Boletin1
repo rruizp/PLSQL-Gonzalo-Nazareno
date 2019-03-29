@@ -179,25 +179,30 @@ begin
 	from Tabla_Articulos
 	where codigo=p_codart;
 	return v_precio;
+exception
+	when NO_DATA_FOUND then
+		raise_application_error(-20001,'El artículo '||p_codart||' no existe');
 end ObtenerPrecio;
 
-create or replace procedure SubirPorcentaje (p_codart VARCHAR2, porcentaje number)
+create or replace procedure SubirPorcentaje (p_codart Tabla_Articulos.codigo%type,
+					     porcentaje number)
 is
 	update Tabla_Articulos
 	set precio = precio * (1+porcentaje/100)
 	where codigo=p_codart;
 end SubirPorcentaje;
 
-create or replace procedure SubirCantidad (p_codart VARCHAR2, cantidad number)
+create or replace procedure SubirCantidad (p_codart Tabla_Articulos.codigo%type,
+					   cantidad number)
 is
 	update Tabla_Articulos
 	set precio = precio + cantidad
 	where codigo=p_codart;
 end SubirCantidad;
 
-create or replace procedure bol1ej19d (p_codart VARCHAR2)
+create or replace procedure ModificarPrecio (p_codart Tabla_Articulos.codigo%type)
 is
-	v_precioantiguo NUMBER(4);
+	v_precioantiguo Tabla_Articulos.precio%type(4);
 begin
 	v_precioantiguo:=ObtenerPrecio(p_codart);
 	if v_precioantiguo is not null then
@@ -217,8 +222,9 @@ tengan una comisión superior al 5% del salario.
 create or replace procedure IncrementarSalario
 is
 	update emp
-	set sal=sal*1.1
+	set sal = sal*1.1
 	where 0.05*sal<nvl(comm,0);
+	dbms_output.put_line(SQL%ROWCOUNT||' filas actualizadas');
 end IncrementarSalario;
 
 21. Crear un procedimiento que inserte un empleado en la tabla EMP. Su número será superior a los
@@ -228,8 +234,26 @@ create or replace procedure InsertarEmpleado
 is
 	v_empnomax emp.empno%type;
 begin
+	ComprobarSiTablaVacía;
 	select max(empno) into v_empnomax
 	from emp;
 	insert into emp (empno, ename, hiredate)
 	values (v_empnomax+1, 'PEPE', SYSDATE);
 end InsertarEmpleado;
+
+create or replace procedure ComprobarSiTablaVacia
+is
+	e_tabla_vacia exception;
+	v_numempleados NUMBER;
+begin
+	select count(*) into v_numempleados
+	from emp;
+	if v_numempleados = 0 then 
+		raise e_tabla_vacia;
+	end if;
+exception
+	when e_tabla_vacia then
+		insert into emp (empno, ename, hiredate)
+		values (1, 'PEPE', SYSDATE);
+		raise;
+end;
