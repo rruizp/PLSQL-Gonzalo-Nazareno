@@ -52,7 +52,7 @@ is
 begin
     v_codigo:=DevolverCodDept(p_nombre);
     if v_codigo>=0 then
-        select sum(sal+nvl(comm,0)) into v_costetotal
+        select nvl(sum(sal+nvl(comm,0)),0) into v_costetotal
         from emp
         where deptno=v_codigo;
         return v_costetotal;
