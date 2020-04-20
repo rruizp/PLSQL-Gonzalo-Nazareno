@@ -59,6 +59,17 @@ begin
 	dbms_output.put_line(v_aux);
 end  MostrarAlReves;
 
+5. Escribir un procedimiento que reciba una fecha y escriba el año, en número, correspondiente a esa
+fecha.
+
+create or replace procedure MostrarAnyo(p_fecha DATE)
+is
+	v_anyo	NUMBER;
+begin
+	v_anyo := to_number(to_char(p_fecha,'YYYY'));
+	dbms_output.put_line('Año: '||v_anyo);
+end MostrarAnyo;
+
 8. Codificar un procedimiento que permita borrar un empleado cuyo número se pasará en la llamada.
 
 create or replace procedure BorrarEmpleado (p_codemp emp.empno%TYPE)
