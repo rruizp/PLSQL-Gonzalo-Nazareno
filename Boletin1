@@ -70,6 +70,65 @@ begin
 	dbms_output.put_line('Año: '||v_anyo);
 end MostrarAnyo;
 
+6. Codificar un procedimiento que reciba una lista de hasta 5 números y visualice su suma.
+
+CREATE OR REPLACE PROCEDURE MostrarSuma(p_num1 NUMBER, p_num2 NUMBER, p_num3 NUMBER, p_num4 NUMBER, p_num5 NUMBER)
+IS
+    v_suma NUMBER;
+BEGIN
+    v_suma:=p_num1+p_num2+p_num3+p_num4+p_num5;
+    dbms_output.put_line('Suma: ' || v_suma);
+END MostrarSuma;
+
+7. Implementar un procedimiento que reciba un importe y visualice el desglose del cambio en unidades monetarias de 0.01, 0.02, 0.05, 0.10, 0.20, 0.50, 1, 2, 5, 10, 20, 50, 100, 200, 500 y 1000 € en orden inverso al que aparecen aquí enumeradas.
+
+CREATE OR REPLACE PROCEDURE MostrarCambio(p_importe NUMBER)
+IS
+    v_cambio NUMBER:=p_importe;
+    v_moneda NUMBER;
+    v_cantidad NUMBER;
+BEGIN
+    dbms_output.put_line('Desglose de: ' || p_importe || ' euros.');
+    WHILE v_cambio > 0 LOOP
+        IF v_cambio >= 1000 THEN
+            v_moneda:=1000;
+        ELSIF v_cambio >= 500 THEN
+            v_moneda:=500;
+        ELSIF v_cambio >= 200 THEN
+            v_moneda:=200;
+        ELSIF v_cambio >= 100 THEN
+            v_moneda:=100;
+        ELSIF v_cambio >= 50 THEN
+            v_moneda:=50;
+        ELSIF v_cambio >= 20 THEN
+            v_moneda:=20;
+        ELSIF v_cambio >= 10 THEN
+            v_moneda:=10;
+        ELSIF v_cambio >= 5 THEN
+            v_moneda:=5;
+        ELSIF v_cambio >= 2 THEN
+            v_moneda:=2;
+        ELSIF v_cambio >= 1 THEN
+            v_moneda:=1;
+        ELSIF v_cambio >= 0.5 THEN
+            v_moneda:=0.5;
+        ELSIF v_cambio >= 0.2 THEN
+            v_moneda:=0.2;
+        ELSIF v_cambio >= 0.1 THEN
+            v_moneda:=0.1;
+        ELSIF v_cambio >= 0.05 THEN
+            v_moneda:=0.05;
+        ELSIF v_cambio >= 0.02 THEN
+            v_moneda:=0.02;
+        ELSE
+            v_moneda:=0.01;
+        END IF;
+        v_cantidad:=TRUNC(v_cambio/v_moneda);
+        v_cambio:=MOD(v_cambio,v_moneda);
+        dbms_output.put_line('Billetes/monedas de ' || v_moneda || ': ' || v_cantidad);
+    END LOOP;
+END MostrarCambio;
+
 8. Codificar un procedimiento que permita borrar un empleado cuyo número se pasará en la llamada.
 
 create or replace procedure BorrarEmpleado (p_codemp emp.empno%TYPE)
@@ -95,6 +154,12 @@ begin
   end if;
 end CambiarLoc;
 
+10. Visualizar todos los procedimientos y funciones de usuarios almacenados en la base de datos y su situación (valid o invalid).
+
+SELECT OWNER, OBJECT_NAME, OBJECT_TYPE, STATUS
+FROM ALL_OBJECTS
+WHERE OBJECT_TYPE IN ('PROCEDURE','FUNCTION');
+
 11. Realizar un procedimiento que reciba un número y muestre su tabla de multiplicar.
 
 create or replace procedure MostrarTablaMultiplicar (p_num NUMBER)
@@ -104,6 +169,22 @@ begin
     dbms_output.put_line (p_num||'X'||i||'='||p_num*i);
   end loop;
 end MostrarTablaMultiplicar;
+
+12. Realiza un procedimiento que reciba dos números 'nota' y 'edad' y un carácter 'sexo' y muestre el mensaje 'ACEPTADA' si la nota es mayor o igual a cinco, la edad es mayor o igual a dieciocho y el sexo es 'M'. En caso de que se cumpla lo mismo, pero el sexo sea 'V', debe imprimir 'POSIBLE'.
+
+CREATE OR REPLACE PROCEDURE AptoNoApto(p_nota NUMBER, p_edad NUMBER, p_sexo CHAR)
+IS
+BEGIN
+    IF p_nota >= 5 AND p_edad >= 18 THEN
+        IF p_sexo = 'M' THEN
+            dbms_output.put_line('ACEPTADA');
+        ELSIF p_sexo = 'V' THEN
+            dbms_output.put_line('POSIBLE');
+        END IF;
+    ELSE
+        dbms_output.put_line('NO APTO');
+    END IF;
+END AptoNoApto;
 
 13. Procedimiento que recibe una letra e imprima si es vocal o consonante.
 
