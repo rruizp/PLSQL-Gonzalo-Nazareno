@@ -72,6 +72,8 @@ end MostrarAnyo;
 
 6. Codificar un procedimiento que reciba una lista de hasta 5 números y visualice su suma.
 
+-- Comprobar si se puede dar un valor por defecto a los parámetros
+
 CREATE OR REPLACE PROCEDURE MostrarSuma(p_num1 NUMBER, p_num2 NUMBER, p_num3 NUMBER, p_num4 NUMBER, p_num5 NUMBER)
 IS
     v_suma NUMBER;
@@ -81,6 +83,8 @@ BEGIN
 END MostrarSuma;
 
 7. Implementar un procedimiento que reciba un importe y visualice el desglose del cambio en unidades monetarias de 0.01, 0.02, 0.05, 0.10, 0.20, 0.50, 1, 2, 5, 10, 20, 50, 100, 200, 500 y 1000 € en orden inverso al que aparecen aquí enumeradas.
+
+-- Este ejercicio quedaría mejor con un CASE
 
 CREATE OR REPLACE PROCEDURE MostrarCambio(p_importe NUMBER)
 IS
@@ -156,9 +160,13 @@ end CambiarLoc;
 
 10. Visualizar todos los procedimientos y funciones de usuarios almacenados en la base de datos y su situación (valid o invalid).
 
+-- Esta sería la consulta sobre el diccionario de datos que nos daría esa información
+
 SELECT OWNER, OBJECT_NAME, OBJECT_TYPE, STATUS
 FROM ALL_OBJECTS
 WHERE OBJECT_TYPE IN ('PROCEDURE','FUNCTION');
+
+-- Para hacer un procedimiento necesitáis el concepto de cursores explícitos.
 
 11. Realizar un procedimiento que reciba un número y muestre su tabla de multiplicar.
 
