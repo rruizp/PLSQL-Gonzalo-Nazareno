@@ -72,9 +72,7 @@ end MostrarAnyo;
 
 6. Codificar un procedimiento que reciba una lista de hasta 5 números y visualice su suma.
 
--- Comprobar si se puede dar un valor por defecto a los parámetros
-
-CREATE OR REPLACE PROCEDURE MostrarSuma(p_num1 NUMBER, p_num2 NUMBER, p_num3 NUMBER, p_num4 NUMBER, p_num5 NUMBER)
+CREATE OR REPLACE PROCEDURE MostrarSuma(p_num1 NUMBER:=0, p_num2 NUMBER:=0, p_num3 NUMBER:=0, p_num4 NUMBER:=0, p_num5 NUMBER:=0)
 IS
     v_suma NUMBER;
 BEGIN
@@ -84,8 +82,6 @@ END MostrarSuma;
 
 7. Implementar un procedimiento que reciba un importe y visualice el desglose del cambio en unidades monetarias de 0.01, 0.02, 0.05, 0.10, 0.20, 0.50, 1, 2, 5, 10, 20, 50, 100, 200, 500 y 1000 € en orden inverso al que aparecen aquí enumeradas.
 
--- Este ejercicio quedaría mejor con un CASE
-
 CREATE OR REPLACE PROCEDURE MostrarCambio(p_importe NUMBER)
 IS
     v_cambio NUMBER:=p_importe;
@@ -94,39 +90,40 @@ IS
 BEGIN
     dbms_output.put_line('Desglose de: ' || p_importe || ' euros.');
     WHILE v_cambio > 0 LOOP
-        IF v_cambio >= 1000 THEN
+        CASE
+        WHEN v_cambio >= 1000 THEN
             v_moneda:=1000;
-        ELSIF v_cambio >= 500 THEN
+        WHEN v_cambio >= 500 THEN
             v_moneda:=500;
-        ELSIF v_cambio >= 200 THEN
+        WHEN v_cambio >= 200 THEN
             v_moneda:=200;
-        ELSIF v_cambio >= 100 THEN
+        WHEN v_cambio >= 100 THEN
             v_moneda:=100;
-        ELSIF v_cambio >= 50 THEN
+        WHEN v_cambio >= 50 THEN
             v_moneda:=50;
-        ELSIF v_cambio >= 20 THEN
+        WHEN v_cambio >= 20 THEN
             v_moneda:=20;
-        ELSIF v_cambio >= 10 THEN
+        WHEN v_cambio >= 10 THEN
             v_moneda:=10;
-        ELSIF v_cambio >= 5 THEN
+        WHEN v_cambio >= 5 THEN
             v_moneda:=5;
-        ELSIF v_cambio >= 2 THEN
+        WHEN v_cambio >= 2 THEN
             v_moneda:=2;
-        ELSIF v_cambio >= 1 THEN
+        WHEN v_cambio >= 1 THEN
             v_moneda:=1;
-        ELSIF v_cambio >= 0.5 THEN
+        WHEN v_cambio >= 0.5 THEN
             v_moneda:=0.5;
-        ELSIF v_cambio >= 0.2 THEN
+        WHEN v_cambio >= 0.2 THEN
             v_moneda:=0.2;
-        ELSIF v_cambio >= 0.1 THEN
+        WHEN v_cambio >= 0.1 THEN
             v_moneda:=0.1;
-        ELSIF v_cambio >= 0.05 THEN
+        WHEN v_cambio >= 0.05 THEN
             v_moneda:=0.05;
-        ELSIF v_cambio >= 0.02 THEN
+        WHEN v_cambio >= 0.02 THEN
             v_moneda:=0.02;
         ELSE
             v_moneda:=0.01;
-        END IF;
+        END CASE;
         v_cantidad:=TRUNC(v_cambio/v_moneda);
         v_cambio:=MOD(v_cambio,v_moneda);
         dbms_output.put_line('Billetes/monedas de ' || v_moneda || ': ' || v_cantidad);
