@@ -234,8 +234,7 @@ begin
   if p_base=0 then
     raise_application_error(-20001,'Datos Erróneos');
   end if;
-  v_resultado:=1/PotenciaPositiva(p_base, p_exponente);
-  dbms_output.put_line(PotenciaPositiva(p_base, p_exponente));
+  v_resultado:=1/PotenciaPositiva(p_base,-1*p_exponente);
   return v_resultado;
 end PotenciaNegativa;
 
