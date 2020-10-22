@@ -132,8 +132,8 @@ create or replace procedure MostrarCabeceraInforme(p_asig asignaturas.nombre%typ
 is
 	v_subrayado varchar2(80):='_';
 begin
-	dbms_output.put_line('Informe de notas de la asignatura '||p_asignatura);
-	dbms_output.put_line(rpad(v_subrayado,34+length(p_asignatura),'_'));
+	dbms_output.put_line('Informe de notas de la asignatura '||p_asig);
+	dbms_output.put_line(rpad(v_subrayado,34+length(p_asig),'_'));
 	dbms_output.put_line(chr(13));
 end MostrarCabeceraInforme;
 
