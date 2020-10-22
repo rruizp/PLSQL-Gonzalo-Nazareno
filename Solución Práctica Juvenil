@@ -60,7 +60,7 @@ end ProcesarLibro;
 
 _________________________________________________________________________________________
 
-create or replace procedure ejercicio2(p_asignatura asignaturas.nombre%type);
+create or replace procedure ejercicio2(p_asignatura asignaturas.nombre%type)
 is
 	cursor c_notas
 	is
