@@ -114,7 +114,7 @@ begin
 	if cont_notas=0 then
 		raise_application_error(-20003,'Tabla Notas vacía');
 	end if;
-end ComprobarExistenciaTablas;
+end ComprobarTablasTienenDatos;
 
 create or replace procedure ComprobarExistenciaAsignatura(p_asig asignaturas.nombre%type)
 is
