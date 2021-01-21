@@ -1,0 +1,34 @@
+1. Realiza un procedimiento llamado PermisosdeAaB que reciba dos nombres de usuario y muestre los permisos sobre objetos
+que ha concedido el primero de ellos al segundo, incluyendo esquema y objeto y si se ha dado la posibilidad de dar ese
+privilegio a otros.
+
+# La info sobre privilegios sobre objetos está en la vista DBA_SYS_PRIVS. Usaremos sus columnas grantee (al que se concede),
+# grantor (el que concede), privilege (permiso), owner (esquema propietario de la tabla), table_name y grantable (si se dió con GRANT
+# option)
+
+create or replace procedure PermisosdeAaB(p_usr1 dba_users.username%type, p_usr2 dba_users.username%type)
+is
+  cursor c_permisos is
+  select privilege, owner, table_name, grantable
+  from dba_tab_privs
+  where grantor = upper(p_usr1) and grantee = upper(p_usr2);
+begin
+  dbms_output.put_line ('Usuario que concede: '||p_usr1);
+  dbms_output.put_line ('Usuario que recibe: '||p_usr2);
+  for v_permisos in c_permisos loop
+    mostrarinfopermiso(v_permisos.privilege, v_permisos.owner, v_permisos.table_name, v.permisos.grantable);
+  end loop;
+end;
+
+create or replace procedure mostrarinfopermiso(p_priv  dba_tab_privs.privilege%type,
+                                               p_owner dba_tab_privs.owner%type,
+                                               p_table dba_tab_privs.table_name%type,
+                                               p_grant dba_tab_privs.grantable%type)
+is
+  v_mensajegrant='';
+begin
+  if p_grant is not null then
+      v_mensajegrant:= 'Puede darlo a otros';
+  end if;
+  dbms_output.put_line(p_priv||' en '||p_table||' de '||p_owner||'  '||v_mensajegrant);
+end;
