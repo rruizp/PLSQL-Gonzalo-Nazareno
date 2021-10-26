@@ -206,6 +206,40 @@ begin
   dbms_output.put_line(p_letra||' es una '||v_resultado);
 end MostrarVocaloConsonante;
 
+14. Procedimiento que reciba un número y escribe la cantidad de números pares que hay entre el 1 y el número indicado.
+
+create or replace procedure ContadorPares (p_numero NUMBER)
+is
+    v_contador NUMBER :=1;
+    v_contadorpares NUMBER :=0;
+begin
+    while v_contador<=p_numero loop
+        if mod(v_contador,2)=0 then
+                v_contadorpares:=v_contadorpares + 1;
+        end if;
+        v_contador:=v_contador + 1;
+    end loop;
+    dbms_output.put_line('Hay '||v_contadorpares||' pares desde el 1 al '||p_numero);
+end ContadorPares;
+
+15. Diseñar un procedimiento que muestre la suma de los números impares comprendidos entre dosvalores numéricos enteros y positivos recibidos por parámetros.
+
+create or replace procedure SumaImpares (p_numero1 INT, p_numero2 INT)
+is
+    v_resultado NUMBER:=0;
+begin
+    if p_numero1 < 0 or p_numero2 < 0 then
+        dbms_output.put_line('Se tienen que introducir numeros positivos');
+    else
+        for numero in p_numero1 .. p_numero2 loop
+                if mod(numero,2)!=0 then
+                        v_resultado:=v_resultado+numero;
+                end if;
+        end loop;
+        dbms_output.put_line('La suma de los numeros impares es '||v_resultado);
+    end if;
+end;
+
 16. Diseñar un procedimiento que recibe por parámetros dos valores numéricos que representan la
 base y el exponente de una potencia donde el exponente es un número entero positivo o negativo. El
 procedimiento visualiza el valor de la potencia, teniendo en cuenta las siguientes consideraciones:
@@ -251,6 +285,36 @@ begin
   end if;
   dbms_output.put_line('Resultado= '||v_resultado);
 end Potencia;
+
+17. Cree una tabla Tabla_Numeros con un atributo valor de tipo INTEGER. Cree unprocedimientoque inserte números del 1 al 50. Compruebe los datos insertados en la tabla
+Tabla_Numeros.
+
+create or replace procedure InsertarDatos
+is begin
+    for i in 1 .. 50 loop
+        insert into Tabla_Numeros values (i);
+    end loop;
+end InsertarDatos;
+/
+
+18. Borre el contenido de la tabla Tabla_Numeros utilizando la sentencia DELETE. Cree unprocedimiento que inserte del 10 al 1, excepto el 4 y el 5. Compruebe, de nuevo, los datos quecontiene la tabla Tabla_Numeros.
+
+create or replace procedure BorrarDatos
+is begin
+    for i in 1 .. 50 loop
+        delete from Tabla_Numeros where valor = i;
+    end loop;
+end BorrarDatos;
+
+create or replace procedure InsertarRango
+is begin
+    BorrarDatos;
+    for i in reverse 1 .. 10 loop
+        if i not in (5,4) then
+            insert into Tabla_Numeros values (i);
+        end if;
+    end loop;
+end InsertarRango;
 
 19. Cree una tabla Tabla_Articulos con los siguientes atributos: código,
 nombre, precio e IVA. Introduzca datos de prueba utilizando la sentencia INSERT.
