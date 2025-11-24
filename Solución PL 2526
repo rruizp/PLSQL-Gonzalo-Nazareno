@@ -1,0 +1,201 @@
+-- 1. (2 puntos) Haz una función DevolverNumGoles que reciba un código de partido y un código de equipo y devuelva los goles que ha
+-- marcado ese equipo en ese partido. Debes contemplar las siguientes excepciones: Partido Inexistente, Equipo no jugó ese partido. 
+
+
+create or replace function DevolverNumGoles (	p_codpartido 	partidos.codpartido%type,
+						                                  p_codequipo	equipos.codequipo%type	)
+return NUMBER
+is
+	v_numgoles NUMBER:=0;
+begin
+	ComprobarExistenciaPartido(p_codpartido);
+	ComprobarEquipoEnPartido(p_codequipo, p_codpartido);
+	select count(*) into v_numgoles
+	from incidencias
+	where codpartido = p_codpartido
+	and tipo='Gol'
+	and codjugador in (select codjugador
+	                   from jugadores
+	                   where codequipo = p_codequipo);
+	return v_numgoles;
+end;
+
+create or replace procedure ComprobarExistenciaPartido (p_codpartido partidos.codpartido%type)
+is
+	v_existe NUMBER:=0;
+begin
+	select count(*) into v_existe
+	from partidos
+	where codpartido = p_codpartido;
+	if v_existe = 0 then
+		raise_application_error(-20001, 'Código de partido inexistente');
+	end if;
+end;
+
+create or replace procedure ComprobarEquipoEnPartido (p_codequipo equipos.codequipo%type, p_codpartido partidos.codpartido%type)
+is
+	v_existe NUMBER:=0;
+begin
+	select count(*) into v_existe
+	from partidos
+	where codpartido = p_codpartido
+	and (codequipolocal=p_codequipo OR codequipovisitante=p_codequipo);
+	if v_existe = 0 then
+		raise_application_error(-20002, 'Ese equipo no jugó ese partido');
+	end if;
+end;
+
+--2. (4 puntos) Realiza un procedimiento MostrarResultado que reciba el código de un partido y muestre el resultado del mismo mostrando
+--los goleadores y el minuto del gol ordenados cronológicamente con el siguiente formato:
+
+--	NombreEquipoLocal NºGolesEquipoLocal -  NombreEquipoVisitante NºgolesEquipoVisitante
+--	Goleadores Minuto
+
+--Ej.: 	Sevilla FC 4 – Valencia CF 1
+		
+--		Kanoute 21'
+--		Kanoute 35'
+--		Jesús Navas 60'
+--		David Villa 83'
+--		Kanoute 87'
+ 
+-- 	Debes contemplar las siguientes excepciones: Código de partido inexistente
+
+create or replace procedure MostrarResultado(p_codpartido partidos.codpartido%type)
+is
+begin
+	ComprobarExistenciaPartido(p_codpartido);
+	MostrarGoles (p_codpartido);
+	MostrarGoleadores (p_codpartido);
+end;
+
+create or replace procedure MostrarGoles(p_codpartido partidos.codpartido%type)
+is
+	v_codlocal		      equipos.codequipo%type;
+	v_codvisitante   	  equipos.codequipo%type;
+	v_nombrelocal 		  equipos.nombre%type;
+	v_nombrevisitante	  equipos.nombre%type;
+	v_numgoleslocal		  number(2);
+	v_numgolesvisitante	number(2);
+begin
+	
+	ObtenerCodigosEquipos(p_codpartido, v_codlocal, v_codvisitante);	
+	v_nombrelocal := DevolverNombreEquipo(v_codlocal);
+	v_nombrevisitante := DevolverNombreEquipo(v_codvisitante);
+	v_numgoleslocal := DevolverNumGoles(p_codpartido, v_codlocal);
+	v_numgolesvisitante := DevolverNumGoles(p_codpartido, v_codvisitante);
+	
+	dbms_output.put_line(v_nombrelocal||' '||v_numgoleslocal||' - '||v_nombrevisitante||' '||v_numgolesvisitante);
+end;
+
+create or replace procedure ObtenerCodigosEquipos (	p_codpartido partidos.codpartido%type, 
+							p_codlocal in out equipos.codequipo%type,
+							p_codvisitante in out equipos.codequipo%type	)
+is
+begin
+	select codequipolocal, codequipovisitante into p_codlocal, p_codvisitante
+	from partidos
+	where codpartido=p_codpartido;
+end;
+
+create or replace procedure MostrarGoleadores(p_codpartido partidos.codpartido%type)
+is
+	cursor c_goleadores
+	is
+	select codjugador, minuto
+	from incidencias
+	where tipo='Gol'
+	and codpartido = p_codpartido
+	order by minuto asc;
+	
+	v_nombre jugadores.nombre%type;
+	
+begin
+	for v_goleador in c_goleadores loop
+		v_nombre := DevolverNombreJugador(v_goleador.codjugador);
+		dbms_output.put_line(v_nombre||' '||v_goleador.minuto||chr(39));
+	end loop;
+end;
+
+create or replace function DevolverNombreJugador (p_codjugador jugadores.codjugador%type)
+is
+	v_nombre jugadores.nombre%type;
+begin
+	select nombre into v_nombre
+	from jugadores
+	where codjugador = p_codjugador;
+	return v_nombre;
+end;
+
+-- 3. (2 puntos) Añade dos columnas a la tabla Partidos donde almacenes los goles del equipo local y los del equipo visitante en dicho
+-- partido. Realiza un procedimiento llamado RellenarGoles para rellenarlas usando la función del ejercicio 1
+
+alter table partidos add (goleslocal NUMBER(2) DEFAULT 0);
+alter table partidos add (golesvisitante NUMBER(2) DEFAULT 0);
+
+create or replace procedure RellenarGoles
+is
+	cursor c_partidos
+	is
+	select codpartido, codequipolocal, codequipovisitante
+	from partidos;
+
+	v_goleslocales NUMBER:=0;
+	v_golesvisitante NUMBER:=0;
+begin
+	for v_partidos in c_partidos loop
+		v_goleslocales:= DevolverNumGoles(v_partidos.codpartido, v_partidos.codequipolocal);
+		v_golesvisitante:= DevolverNumGoles(v_partidos.codpartido, v_partidos.codequipovisitante);
+		update partidos 
+		set goleslocal = v_goleslocales, golesvisitante = v_golesvisitante
+		where codpartido=v_partidos.codpartido;
+	end loop;
+end;
+
+-- 4.(2 puntos) Realiza un trigger que cada vez que se inserte un gol en la tabla Incidencias actualice la columna correspondiente del
+-- ejercicio anterior.
+
+create or replace trigger ActualizaGoles
+after insert on incidencias
+for each row
+is
+	v_codequipo equipos.codequipo%type;
+	v_eslocal NUMBER(1);
+begin
+	if :new.tipo='Gol' then
+		v_codequipo:= DevolverEquipoDeJugador(:new.codjugador);
+		ComprobarEquipoEnPartido (v_codequipo, :new.codpartido);
+		v_eslocal := AveriguarLocal (v_codequipo, :new.codpartido);
+		if v_eslocal=1 then
+			update partidos
+			set goleslocal = goleslocal + 1
+			where codpartido=:new.codpartido;
+		else
+			update partidos
+			set golesvisitante = golesvisitante + 1
+			where codpartido=:new.codpartido;
+		end if;
+	end if;
+end;
+
+create or replace function DevolverEquipoDeJugador (p_codjugador jugadores.codjugador%type)
+return equipos.codequipo%type
+is
+	v_codequipo equipos.codequipo%type;
+begin
+	select codequipo into v_codequipo
+	from jugadores
+	where codjugador=p_codjugador;
+	return v_codequipo;
+end;
+
+create or replace function AveriguarLocal (p_codequipo equipos.codequipo%type, p_codpartido partidos.codpartido%type)
+return NUMBER
+is
+	v_eslocal  number:=0;
+begin
+	select count(*) into v_eslocal
+	from partidos
+	where codpartido = p_codpartido and p_codequipo=codequipolocal;
+	return v_eslocal;
+end;
