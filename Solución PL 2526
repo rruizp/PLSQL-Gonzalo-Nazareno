@@ -3,7 +3,7 @@
 
 
 create or replace function DevolverNumGoles (	p_codpartido 	partidos.codpartido%type,
-						                                  p_codequipo	equipos.codequipo%type	)
+						                        p_codequipo	equipos.codequipo%type	)
 return NUMBER
 is
 	v_numgoles NUMBER:=0;
