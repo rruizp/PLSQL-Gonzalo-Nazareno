@@ -1,3 +1,6 @@
+Ejercicio 1
+Realiza un procedimiento que muestre los cuatro libros más prestados contemplando las excepciones oportunas.
+
 create or replace procedure ejercicio1
 is
 	cursor c_libros
@@ -59,6 +62,12 @@ begin
 end ProcesarLibro;
 
 _________________________________________________________________________________________
+
+Ejercicio 2
+
+Realiza un procedimiento que reciba el nombre de una asignatura y muestre las notas de cada alumno y después un resumen
+con el alumno y la nota más altas y más bajas y el número de suspensos, aprobados, notables y sobresalientes, comprobando
+las excepciones necesarias.
 
 create or replace procedure ejercicio2(p_asignatura asignaturas.nombre%type)
 is
@@ -199,6 +208,8 @@ begin
 end MostrarResultados;
 
 __________________________________________________________________________________________
+
+Ejercicio 3	
 
 create or replace procedure ejercicio3a
 is
